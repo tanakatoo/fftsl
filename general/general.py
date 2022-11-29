@@ -7,7 +7,6 @@ general_bp = Blueprint('general_bp', __name__, template_folder='templates', stat
 @general_bp.route('/')
 def home():
     # products = Product.query.all()
-    print('******')
     
     return render_template('home.html')
 
