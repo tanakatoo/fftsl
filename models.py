@@ -1,5 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+import jwt
+from jwt.exceptions import ExpiredSignatureError
+import os
+from datetime import datetime, timedelta
+from flask import flash
 
 import random
 
@@ -61,16 +66,36 @@ class User(db.Model):
     def set_password(self, email, pwd):
         hashed=bcrypt.generate_password_hash(pwd)
         hashed_utf8=hashed.decode("utf8")
-        u=User.query.filter_by(email=email)
+        u=User.query.filter_by(email=email).first()
         u.password=hashed_utf8
         try:
             db.session.add(u)
             db.session.commit()
-            return u
+            return (True,u)
         except Exception as e:
-            return False
+            return (False,e)
     
-   
+    @classmethod
+    def get_user(self, email):
+        u=User.query.filter_by(email=email).first()
+        return u
+    
+    def get_secret_key(self):
+        # this is the code (link) we send via email to user
+        key=jwt.encode({'email':self.email, 'exp': datetime.now() + timedelta(days=5)},os.environ.get("SECRET_KEY"))
+        return key
+    
+            
+    @classmethod
+    def confirm_secret_key(self,key):
+        try:
+            al=jwt.get_unverified_header(key)
+            res=jwt.decode(key,key=os.environ.get("SECRET_KEY"),algorithms=[al['alg'], ])
+            return (True,res)
+        except ExpiredSignatureError as e:
+            flash('Password set/reset has been expired. Please input email to obtain a new one')
+            return (False,e)
+        
 
 class City(db.Model):
     __tablename__='cities'

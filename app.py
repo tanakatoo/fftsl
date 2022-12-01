@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, redirect, render_template, flash, session
+from flask import Flask, request, jsonify, redirect, render_template, flash, session,g
 from flask_debugtoolbar import DebugToolbarExtension
 from models import db, connect_db
 import os
@@ -33,12 +33,20 @@ app.register_blueprint(parents_bp, url_prefix='/parents')
 app.register_blueprint(schools_bp, url_prefix='/schools')
 
 
-#@email_bp.route('/email')
-# def test_email():
-#     msg = Message('Twilio SendGrid Test Email', recipients=['recipient@example.com'])
-#     msg.body = 'This is a test email!'
-#     msg.html = '<p>This is a test email!</p>'
-#     mail.send(msg)
+CURR_USER_KEY = "curr_user"
+
+# global functions
+
+@app.before_request
+def add_user_to_g():
+    """If we're logged in, add curr user to Flask global."""
+
+    # if CURR_USER_KEY in session:
+    #     g.user = User.query.get(session[CURR_USER_KEY])
+
+    # else:
+    #     g.user = None
+
 
 
 
