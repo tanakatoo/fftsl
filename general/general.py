@@ -6,12 +6,9 @@ general_bp = Blueprint('general_bp', __name__, template_folder='templates', stat
 # all go to the root of this, which is defined in app.py ('/')
 @general_bp.route('/')
 def home():
-    # products = Product.query.all()
-    
     return render_template('home.html')
 
 @general_bp.route('/browsing')
 def browsing():
-    # products = Product.query.all()
     
     return render_template('browsing.html')

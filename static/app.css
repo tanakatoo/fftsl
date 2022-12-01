@@ -1,0 +1,17 @@
+.success_bkg{
+    background-color: rgb(187, 255, 187);
+    color: green;
+}
+
+.failure_bkg{
+    background-color: rgb(255, 177, 177);
+    color:rgb(255, 0, 0);
+}
+
+.error{
+    color: rgb(255, 0, 0);
+}
+
+.hide{
+    display: none;
+}

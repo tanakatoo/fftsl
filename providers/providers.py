@@ -8,5 +8,8 @@ providers_bp = Blueprint('providers_bp', __name__,
 # all go to the root of this, which is defined in app.py ('/products')
 @providers_bp.route('/')
 def home():
-    # products = Product.query.all()
     return render_template('provider_home.html')
+
+@providers_bp.route('/learn_more')
+def learn_more():
+    return render_template('learn_more.html')

@@ -5,11 +5,22 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static',filename='app.css')}}">
+    {% block header_area %} {% endblock %}
     <title>{% block title %} {%endblock%}</title>
 </head>
 
 <body>
-    {% block content %} test{%endblock%}
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+    <section class="flash_messages">
+        {% for catgory, msg in messages %}
+        <p class="{{category}}">{{msg}}</p>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </section>
+    {% block content %} {%endblock%}
 </body>
 
 </html>

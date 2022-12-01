@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('auth_bp.static',filename='auth_css.css')}}">{% endblock %}
 {% block title %}Signup{% endblock %}
 {% block content %}
-<h1>Signup</h1>
-<p>Signup button for parents, or school, or providers</p>
-<p>add checkbox to show who they want to signup for (tell them the requirements ahead of time, like if you are signing
+<h1>Signup Form</h1>
+<p>Signup parents (maybe?), or school, or providers</p>
+<p>add radio to show who they want to signup for (tell them the requirements ahead of time, like if you are signing
     up as a provider,
     you will be asked to send a proof of inspection, if you signup as a school, the principal of the school will be
     contacted to confirm
@@ -13,6 +14,25 @@
     send them the email first (if they already started the process it's easier to continue than for them to not start
     yet and already shoot them down)
 </p>
+<p>(if implementing)if parents signup they it will bring them to dashboard (just search and the restaurants they liked)
+</p>
+<form method="POST" action="/signup" id="signupForm">
+    <label for="email">Email</label>
+    <input type="email" name="email" id="email" /> <span class="error" id="schoolNameError"></span>
+    <p>I am a: </p>
+    <div id="selection">
+        <input type="radio" id="provider" name="user_type" value="provider" checked>
+        <label for="provider">Provider</label>
+        <input type="radio" id="school" value="school" name="user_type">
+        <label for="school">School</label>
+        <div id="dispSchoolName" class="hide"><label for="schoolName">Name of School: </label>
+            <input type="text" name="schoolName" id="schoolName" /> <span class="error" id="schoolNameError"></span>
 
-
+        </div>
+    </div>
+    <p>
+        <button id="submit">Signup</button>
+    </p>
+</form>
+<script src="{{url_for('auth_bp.static',filename='auth_js.js')}}"></script>
 {% endblock %}
