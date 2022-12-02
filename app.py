@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify, redirect, render_template, flash, session,g
+from flask import Flask, request, jsonify, redirect, render_template, flash, session,g, url_for
 from flask_debugtoolbar import DebugToolbarExtension
 from models import db, connect_db
 import os
-from config import DevConfig,ProdConfig
+from config import DevConfig
+from models import User
 
 
 # import blueprints
@@ -32,22 +33,18 @@ app.register_blueprint(email_bp,url_prefix='/')
 app.register_blueprint(parents_bp, url_prefix='/parents')
 app.register_blueprint(schools_bp, url_prefix='/schools')
 
-
-CURR_USER_KEY = "curr_user"
-
+CURR_USER_KEY='curr_user'
 # global functions
+
 
 @app.before_request
 def add_user_to_g():
-    """If we're logged in, add curr user to Flask global."""
+    """Runs before every request - even in blueprint
+    If we're logged in, add curr user to Flask global."""
+    
+    if CURR_USER_KEY in session:
+        g.user = User.query.get(session[CURR_USER_KEY])
 
-    # if CURR_USER_KEY in session:
-    #     g.user = User.query.get(session[CURR_USER_KEY])
-
-    # else:
-    #     g.user = None
-
-
-
-
+    else:
+        g.user = None
 

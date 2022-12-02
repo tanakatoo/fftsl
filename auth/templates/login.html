@@ -1,9 +1,25 @@
 {% extends 'base.html' %}
-
+{% block header_area %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/validate.js/0.13.1/validate.min.js"></script>{% endblock %}
 {% block title %}Login{% endblock %}
 {% block content %}
 <h1>Login</h1>
 <p>Login with email address/username and password</p>
+
+<form id="loginForm" method="POST">
+    {{ form.hidden_tag() }}
+    {% for field in form
+    if field.widget.input_type !='hidden' %}
+    <p>
+        {{field.label}}
+        {{field(class_="form-control")}}
+        {% for error in field.errors %}
+        {{error(class="failure_bkg")}}
+        {% endfor%}
+    </p>
+    {% endfor %}
+    <button id="submit">Login</button>
+</form>
 <p>Once logged in, take them to dashboard</p>
 
 {% endblock %}

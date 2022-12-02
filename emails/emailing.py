@@ -33,7 +33,7 @@ def signup_email():
                 Once we get your submission and confirm, you will receive an email to set your password to login to our website."""
     elif user_type=="school":
         school=request.args['school_name']
-        beginning+="""Thank you for giving your students the opportunity to experience a wealth of culinary experience.<br><br>
+        beginning+=f"""Thank you for giving your students the opportunity to experience a wealth of culinary experience.<br><br>
             To finish signing up for an account, we need to verify your identity. We will be in touch with the principal of
             {school_name} to confirm participation. Once we get confirmation, you will receive an email to set your password
             to login to our website and start your journey to healthier, happier students!"""
@@ -84,7 +84,7 @@ def set_password_email():
         sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         response = sg.send(message)
         
-        flash("Your email has been registered. Please check your email for further instructions. In the meantime, feel free to browse around!", "success_bkg")
+        flash("Instructions to reset your password has been sent to your email. In the meantime, feel free to browse around!", "success_bkg")
         return redirect ('/browsing')
     except HTTPError as e:
         # pylint: disable=no-member
