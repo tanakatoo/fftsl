@@ -16,23 +16,32 @@
 </p>
 <p>(if implementing)if parents signup they it will bring them to dashboard (just search and the restaurants they liked)
 </p>
-<form method="POST" action="/signup" id="signupForm">
-    <label for="email">Email</label>
-    <input type="email" name="email" id="email" /> <span class="error" id="emailError"></span>
-    <p>I am a: </p>
-    <div id="selection">
-        <input type="radio" id="provider" name="user_type" value="provider" checked>
-        <label for="provider">Provider</label>
-        <input type="radio" id="school" value="school" name="user_type">
-        <label for="school">School</label>
-        <div id="dispSchoolName" class="hide"><label for="schoolName">Name of School: </label>
-            <input type="text" name="schoolName" id="schoolName" /> <span class="error" id="schoolNameError"></span>
-
-        </div>
-    </div>
+<form id="signupForm" method="POST">
+    {{ form.hidden_tag() }}
     <p>
-        <button id="submit">Signup</button>
+        {{form.email.label(class_="red")}}
+        {{form.email}} <span id="emailError" class="error">{{form.email.errors.error}}</span>
     </p>
+    <p>
+        {{form.user_type.label}}
+    <div id="selection">
+        {% for subfield in form.user_type %}
+        <tr>
+            <td>{{ subfield}}</td>
+            <td>{{ subfield.label }}</td>
+        </tr>
+        {% endfor %}
+    </div>
+    </p>
+    <div id="dispSchoolName" class="hide">
+        <p>
+            {{form.school_name.label}}
+            {{form.school_name}} <span class="error" id="schoolNameError">{{form.school_name.errors.error}}</span>
+        </p>
+
+    </div>
+
+    <button id="submit">Signup</button>
 </form>
 <script src="{{url_for('auth_bp.static',filename='auth_js.js')}}"></script>
 {% endblock %}

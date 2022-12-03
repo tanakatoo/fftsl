@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.debug=True
 app.config.from_object(DevConfig)
 debug=DebugToolbarExtension(app)
-# app.config['EXPLAIN_TEMPLATE_LOADING'] = True not sure why this is not working
+app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 
 connect_db(app)
 

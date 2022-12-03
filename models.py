@@ -24,10 +24,10 @@ class User(db.Model):
     id= db.Column(db.Integer,
                   primary_key=True,
                   autoincrement=True)
-    email=db.Column(db.Text,
+    email=db.Column(db.String(100),
                    nullable=False) #NEED TO MAKE THIS UNIQUE IN PRODUCTION
     password=db.Column(db.Text, nullable=False)
-    user_type=db.Column(db.Text, nullable=False)
+    user_type=db.Column(db.String(10), nullable=False)
     active=db.Column(db.Boolean,nullable=False,default=False)
     
     db.relationship("School", back_populates="users", cascade='save-update, merge, delete')
@@ -94,7 +94,7 @@ class User(db.Model):
             res=jwt.decode(key,key=os.environ.get("SECRET_KEY"),algorithms=[al['alg'], ])
             return (True,res)
         except ExpiredSignatureError as e:
-            flash('Password set/reset has been expired. Please input email to obtain a new one')
+            flash('Password set/reset has been expired. Please input email to obtain a new one', 'failure_bkg')
             return (False,e)
         
 
@@ -106,7 +106,7 @@ class City(db.Model):
     id= db.Column(db.Integer,
                   primary_key=True,
                   autoincrement=True)
-    name=db.Column(db.Text,
+    name=db.Column(db.String(100),
                    nullable=False)
 
 class Province(db.Model):
@@ -117,7 +117,7 @@ class Province(db.Model):
     id= db.Column(db.Integer,
                   primary_key=True,
                   autoincrement=True)
-    name=db.Column(db.Text,
+    name=db.Column(db.String(80),
                    nullable=False)
 
 class School(db.Model):
@@ -128,18 +128,18 @@ class School(db.Model):
     id= db.Column(db.Integer,
                   primary_key=True,
                   autoincrement=True)
-    name=db.Column(db.Text,
+    name=db.Column(db.String(200),
                    nullable=False, unique=True)
     address=db.Column(db.Text)
     city_id=db.Column(db.Integer, db.ForeignKey('cities.id'))
     province_id=db.Column(db.Integer,db.ForeignKey('provinces.id'))
-    principal_name=db.Column(db.Text)
-    contact_name=db.Column(db.Text)
-    phone=db.Column(db.Integer)
+    principal_name=db.Column(db.String(100))
+    contact_name=db.Column(db.String(100))
+    phone=db.Column(db.String(50))
     user_id=db.Column(db.Integer, db.ForeignKey('users.id'))
     active=db.Column(db.Boolean, nullable=False,default=True)
     
-#     db.relationship('User', back_populates="schools", cascade='save-update, merge, delete')
+    db.relationship('User', back_populates="schools", cascade='save-update, merge, delete')
     
     @classmethod
     def register(cls,name):
@@ -160,7 +160,7 @@ class Recurring_Days(db.Model):
     id= db.Column(db.Integer,
                   primary_key=True,
                   autoincrement=True)
-    day=db.Column(db.Text,
+    day=db.Column(db.String(10),
                    nullable=False, unique=True)
 
 class Recurring_availability(db.Model):
@@ -169,33 +169,47 @@ class Recurring_availability(db.Model):
         return f"<id={self.id}, provider_id={self.provider_id}, recurring_day_id={self.recurring_day_id}>"
     
     provider_id= db.Column(db.Integer,
-                  primary_key=True)
+                           db.ForeignKey('providers.id'),
+                           primary_key=True, )
     recurring_day_id= db.Column(db.Integer,
-                  primary_key=True)
+                                db.ForeignKey('recurring_days.id'),
+                                primary_key=True)
 
 class Provider(db.Model):
     __tablename__='providers'
+    
     def __repr__(self):
         return f"<id={self.id}, name={self.name}>"
     
     id= db.Column(db.Integer,
                   primary_key=True,
                   autoincrement=True)
-    name=db.Column(db.Text,
+    name=db.Column(db.String(200),
                    nullable=False, unique=True)
     address=db.Column(db.Text)
     city_id=db.Column(db.Integer,db.ForeignKey('cities.id'))
     province_id=db.Column(db.Integer,db.ForeignKey('provinces.id'))
-    contact_name=db.Column(db.Text)
-    phone=db.Column(db.Integer)
+    geocode_lat=db.Column(db.Float)
+    geocode_long=db.Column(db.Float)
+    contact_name=db.Column(db.String(100))
+    phone=db.Column(db.String(50))
     user_id=db.Column(db.Integer, db.ForeignKey('users.id'))
     sales_pitch=db.Column(db.Text)
     max_meals_per_day=db.Column(db.Integer)
-    serve_num_schools_per_day=db.Column(db.Integer)
+    min_meals=db.Column(db.Integer)
+    serve_num_org_per_day=db.Column(db.Integer)
     active=db.Column(db.Boolean, nullable=False,default=True)
     
-    
+    @classmethod
+    def get_provider(cls, u):
+        try:
+            print('*******')
+            print('in here')
+            raise
+            p=cls.query.get(u.id)
+            return (True,p)
+        except Exception as e:
+            return (False,e)
     # recurring_availabilities=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers")
-    # #returns NoForeignKeysError
-    #users=db.relationship('User', back_populates="providers", cascade='save-update, merge, delete')
+    # users=db.relationship('User', back_populates="providers", cascade='save-update, merge, delete')
     # #returns invalidrequesterror

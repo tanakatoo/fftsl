@@ -14,7 +14,7 @@
     {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
     <section class="flash_messages">
-        {% for catgory, msg in messages %}
+        {% for category, msg in messages %}
         <p class="{{category}}">{{msg}}</p>
         {% endfor %}
         {% endif %}

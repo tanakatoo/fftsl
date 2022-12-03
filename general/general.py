@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 # have to import the model for this here
 
@@ -13,3 +13,8 @@ def home():
 def browsing():
     
     return render_template('browsing.html')
+
+@general_bp.route('/system_message')
+def system_message():
+    msg=request.args['msg']
+    return render_template("message.html",msg=msg)

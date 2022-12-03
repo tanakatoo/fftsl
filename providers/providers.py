@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, g
+from flask import Blueprint, render_template, g, redirect, url_for
 from auth.auth import check_login
+from models import Provider
+from forms import ProviderInfo
 # have to import the model for this here
 
 providers_bp = Blueprint('providers_bp', __name__,
@@ -10,10 +12,27 @@ providers_bp = Blueprint('providers_bp', __name__,
 @providers_bp.route('/')
 @check_login
 def home():
-    print('**********g user')
-    print(g.user)
-    return render_template('providers_home.html')
+    """ get info from db """
+    p=Provider.get_provider(g.user)
+    if p[0]:
+        p=p[1]
+        return render_template("providers_home.html", p=p)
+    else:
+        msg="Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error."
+        return redirect(url_for('general_bp.system_message', msg=msg),code=307)
 
 @providers_bp.route('/learn_more')
 def learn_more():
     return render_template('learn_more.html')
+
+@providers_bp.route('/edit_info')
+@check_login
+def edit_info():
+    p=Provider.get_provider(g.user)
+    if p[0]:
+        p=p[1]
+        form=ProviderInfo(obj=p)
+        return render_template("providers_edit_info.html",form=form)
+    else:
+        msg="Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error."
+        return redirect(url_for('general_bp.system_message', msg=msg))

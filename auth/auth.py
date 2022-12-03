@@ -54,9 +54,9 @@ def set_password():
                 return redirect ('/browsing')
         else:
             # setting password returned an error
-            message=f"""<p>Sorry, there was an error setting your password. Please contact help@fftsl.ca with the following message:<p>
+            msg=f"""<p>Sorry, there was an error setting your password. Please contact help@fftsl.ca with the following message:<p>
                     <p>{res[1]}"""
-            return render_template("general_bp.message",msg=message) 
+            return redirect(url_for("general_bp.system_message",msg=msg)) 
     else:
         # make sure they are not accessing the page by typing in the url
         if(request.args.get('key')):
@@ -68,12 +68,12 @@ def set_password():
                     return render_template("set_password.html", form=form, email=u.email)
                 else:
                     # cannot find email
-                    message="For some reason we couldn't find you registered in our system. Please contact help@fftsl.ca and we will get you sorted out."
-                    return render_template("general_bp.message",msg=message)
+                    msg="For some reason we couldn't find you registered in our system. Please contact help@fftsl.ca and we will get you sorted out."
+                    return redirect(url_for("general_bp.system_message",msg=msg))
         else:
             # code is incorrect
-            message="The link you are trying to reach to reset your password is incorrect. Please contact help@fftsl.ca and we will get you sorted out."
-            return render_template('unauthorized.html',msg=message)
+            msg="The link you are trying to reach to reset your password is incorrect. Please contact help@fftsl.ca and we will get you sorted out."
+            return render_template('unauthorized.html',msg=msg)
 
 @auth_bp.route('/signup', methods=["GET","POST"])
 def signup():
@@ -83,13 +83,15 @@ def signup():
             # when we can register parents, we need to add pwd to this
 
             u=User.register(user_type=form.user_type.data,email=form.email.data)
+            print('*******')
+            print(u)
             if request.form['user_type'] == 'school':
                 s=School.register(name=request.form['school_name'])
                 
             if u:
                 return redirect(url_for('email_bp.signup_email',user_type=request.form['user_type'],email=request.form['email'], school_name=request.form.get('school_name')))
             else:
-                flash('Not sure what happened in signup, but please contact help@fftsl.ca.')
+                flash('Not sure what happened in signup, but please contact help@fftsl.ca.', 'failure_bkg')
                 return render_template('signup.html', form=form)
         except Exception as e:
             return e
