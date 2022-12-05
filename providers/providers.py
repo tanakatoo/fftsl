@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, g, redirect, url_for
+from flask import Blueprint, render_template, g, redirect, url_for, session
 from auth.auth import check_login
 from models import Provider
 from forms import ProviderInfo
@@ -16,10 +16,11 @@ def home():
     p=Provider.get_provider(g.user)
     if p[0]:
         p=p[1]
+        
         return render_template("providers_home.html", p=p)
     else:
-        msg="Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error."
-        return redirect(url_for('general_bp.system_message', msg=msg),code=307)
+        session['msg']=f"Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error: {p[1]}"
+        return redirect(url_for('general_bp.system_message'))
 
 @providers_bp.route('/learn_more')
 def learn_more():
@@ -34,5 +35,5 @@ def edit_info():
         form=ProviderInfo(obj=p)
         return render_template("providers_edit_info.html",form=form)
     else:
-        msg="Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error."
-        return redirect(url_for('general_bp.system_message', msg=msg))
+        session['msg']=f"Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error: {p[1]}"
+        return redirect(url_for('general_bp.system_message'))

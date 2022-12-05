@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, redirect, render_template, flash, ses
 from flask_debugtoolbar import DebugToolbarExtension
 from models import db, connect_db
 import os
-from config import DevConfig
+from config import DevConfig, CURR_USER_KEY
 from models import User
 
 
@@ -33,7 +33,7 @@ app.register_blueprint(email_bp,url_prefix='/')
 app.register_blueprint(parents_bp, url_prefix='/parents')
 app.register_blueprint(schools_bp, url_prefix='/schools')
 
-CURR_USER_KEY='curr_user'
+
 # global functions
 
 
@@ -43,7 +43,7 @@ def add_user_to_g():
     If we're logged in, add curr user to Flask global."""
     
     if CURR_USER_KEY in session:
-        g.user = User.query.get(session[CURR_USER_KEY])
+        g.user = User.get_user(id=session[CURR_USER_KEY])
 
     else:
         g.user = None

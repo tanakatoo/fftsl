@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+#global constants
+CURR_USER_KEY='curr_user'
+
 class Config(object):
     
     # STATIC_FOLDER='static'
@@ -20,6 +23,8 @@ class Config(object):
     MAIL_USERNAME = 'apikey'
     MAIL_PASSWORD= os.environ.get('SENDGRID_API_KEY')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
+    
+    
 
 
 class ProdConfig(Config):

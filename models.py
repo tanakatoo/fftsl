@@ -30,31 +30,29 @@ class User(db.Model):
     user_type=db.Column(db.String(10), nullable=False)
     active=db.Column(db.Boolean,nullable=False,default=False)
     
-    db.relationship("School", back_populates="users", cascade='save-update, merge, delete')
-    db.relationship("Provider", back_populates="users", cascade='save-update, merge, delete')
+    school = db.relationship("School", back_populates="user")
+    provider=db.relationship("Provider", back_populates="user")
     
     @classmethod
     def register(cls,email,user_type,pwd=""):
         # this is to register schools or providers only
         # no need for user to set password yet until they are authorized manually
         # we set a fake random generated password first
-        
-        if user_type == "provider" or user_type=="school":
-            random_password=""
-            for num in range(10):
-                random_password += str(random.randint(0,9))
-            hashed=bcrypt.generate_password_hash(random_password)
-            pwd=hashed.decode("utf8")
-           
-        u=cls(email=email,password=pwd, user_type=user_type)
-        
         try:
+            if user_type == "provider" or user_type=="school":
+                random_password=""
+                for num in range(10):
+                    random_password += str(random.randint(0,9))
+                hashed=bcrypt.generate_password_hash(random_password)
+                pwd=hashed.decode("utf8")
+            
+            u=cls(email=email,password=pwd, user_type=user_type)
             db.session.add(u)
             db.session.commit()
-            return True
+            return (True,u)
         except Exception as e:
             db.session.rollback()
-            return False
+            return (False,e)
     
     @classmethod
     def authenticate(self, email, pwd):
@@ -77,8 +75,11 @@ class User(db.Model):
             return (False,e)
     
     @classmethod
-    def get_user(self, email):
-        u=User.query.filter_by(email=email).first()
+    def get_user(cls, email=None, id=None):
+        if id:
+            u=User.query.get(id)
+        else:
+            u=User.query.filter_by(email=email).first()
         return u
     
     def get_secret_key(self):
@@ -108,6 +109,9 @@ class City(db.Model):
                   autoincrement=True)
     name=db.Column(db.String(100),
                    nullable=False)
+    
+    school=db.relationship('School', back_populates='city')
+    provider=db.relationship('Provider', back_populates='city')
 
 class Province(db.Model):
     __tablename__='provinces'
@@ -119,15 +123,18 @@ class Province(db.Model):
                   autoincrement=True)
     name=db.Column(db.String(80),
                    nullable=False)
+    
+    school=db.relationship('School', back_populates='province')
+    provider=db.relationship('Provider', back_populates='province')
 
 class School(db.Model):
     __tablename__='schools'
     def __repr__(self):
         return f"<id={self.id}, name={self.name}>"
     
-    id= db.Column(db.Integer,
-                  primary_key=True,
-                  autoincrement=True)
+    user_id= db.Column(db.Integer,
+                  db.ForeignKey('users.id'),
+                  primary_key=True)
     name=db.Column(db.String(200),
                    nullable=False, unique=True)
     address=db.Column(db.Text)
@@ -136,21 +143,22 @@ class School(db.Model):
     principal_name=db.Column(db.String(100))
     contact_name=db.Column(db.String(100))
     phone=db.Column(db.String(50))
-    user_id=db.Column(db.Integer, db.ForeignKey('users.id'))
     active=db.Column(db.Boolean, nullable=False,default=True)
     
-    db.relationship('User', back_populates="schools", cascade='save-update, merge, delete')
+    user=db.relationship('User',back_populates="school")
+    city=db.relationship('City', back_populates="school")
+    province=db.relationship('Province', back_populates="school")
     
     @classmethod
-    def register(cls,name):
-        s=cls(name=name)
+    def register(cls,name, user_id):
+        s=cls(name=name, user_id=user_id)
         try:
             db.session.add(s)
             db.session.commit()
-            return s
+            return (True,s)
         except Exception as e:
             db.session.rollback()
-            return False
+            return (False,e)
     
 class Recurring_Days(db.Model):
     __tablename__='recurring_days'
@@ -161,7 +169,10 @@ class Recurring_Days(db.Model):
                   primary_key=True,
                   autoincrement=True)
     day=db.Column(db.String(10),
-                   nullable=False, unique=True)
+                   nullable=False, 
+                   unique=True)
+    
+    providers=db.relationship("Provider", secondary="recurring_availabilities",back_populates="recurring_days")
 
 class Recurring_availability(db.Model):
     __tablename__='recurring_availabilities'
@@ -169,8 +180,8 @@ class Recurring_availability(db.Model):
         return f"<id={self.id}, provider_id={self.provider_id}, recurring_day_id={self.recurring_day_id}>"
     
     provider_id= db.Column(db.Integer,
-                           db.ForeignKey('providers.id'),
-                           primary_key=True, )
+                           db.ForeignKey('providers.user_id'),
+                           primary_key=True)
     recurring_day_id= db.Column(db.Integer,
                                 db.ForeignKey('recurring_days.id'),
                                 primary_key=True)
@@ -181,35 +192,39 @@ class Provider(db.Model):
     def __repr__(self):
         return f"<id={self.id}, name={self.name}>"
     
-    id= db.Column(db.Integer,
-                  primary_key=True,
-                  autoincrement=True)
+    user_id= db.Column(db.Integer,
+                  db.ForeignKey('users.id'),
+                  primary_key=True)
     name=db.Column(db.String(200),
-                   nullable=False, unique=True)
+                   nullable=False, 
+                   unique=True)
     address=db.Column(db.Text)
-    city_id=db.Column(db.Integer,db.ForeignKey('cities.id'))
-    province_id=db.Column(db.Integer,db.ForeignKey('provinces.id'))
-    geocode_lat=db.Column(db.Float)
-    geocode_long=db.Column(db.Float)
+    city_id=db.Column(db.Integer,
+                      db.ForeignKey('cities.id'))
+    province_id=db.Column(db.Integer,
+                          db.ForeignKey('provinces.id'))
+    geocode_lat=db.Column(db.Numeric(11,6))
+    geocode_long=db.Column(db.Numeric(11,6))
     contact_name=db.Column(db.String(100))
     phone=db.Column(db.String(50))
-    user_id=db.Column(db.Integer, db.ForeignKey('users.id'))
     sales_pitch=db.Column(db.Text)
     max_meals_per_day=db.Column(db.Integer)
     min_meals=db.Column(db.Integer)
     serve_num_org_per_day=db.Column(db.Integer)
-    active=db.Column(db.Boolean, nullable=False,default=True)
+    active=db.Column(db.Boolean, 
+                     nullable=False,
+                     default=True)
+    
+    city=db.relationship("City", back_populates="provider")
+    province=db.relationship("Province", back_populates="provider")
+    recurring_days=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers")
+    user=db.relationship('User', back_populates="provider")
     
     @classmethod
     def get_provider(cls, u):
         try:
-            print('*******')
-            print('in here')
-            raise
-            p=cls.query.get(u.id)
+            p=Provider.query.filter_by(user_id=u.id)
             return (True,p)
         except Exception as e:
             return (False,e)
-    # recurring_availabilities=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers")
-    # users=db.relationship('User', back_populates="providers", cascade='save-update, merge, delete')
-    # #returns invalidrequesterror
+   

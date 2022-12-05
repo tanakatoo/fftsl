@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from functools import wraps
 from models import User, School
 from forms import PasswordReset, PasswordSet, Login, UserRegister
+from config import CURR_USER_KEY
 
-CURR_USER_KEY='curr_user'
 # have to import the model for this here
 
 auth_bp = Blueprint('auth_bp', __name__,
@@ -17,7 +17,7 @@ def reset_password():
     form=PasswordReset()
     if form.validate_on_submit():
         # get the email and see if it's in the db
-        u=User.get_user(form.email.data)
+        u=User.get_user(email=form.email.data)
         if u and u.active:
             # if it exists, generate token and send by email
             key=u.get_secret_key()
@@ -54,22 +54,22 @@ def set_password():
                 return redirect ('/browsing')
         else:
             # setting password returned an error
-            msg=f"""<p>Sorry, there was an error setting your password. Please contact help@fftsl.ca with the following message:<p>
+            session['msg']=f"""<p>Sorry, there was an error setting your password. Please contact help@fftsl.ca with the following message:<p>
                     <p>{res[1]}"""
-            return redirect(url_for("general_bp.system_message",msg=msg)) 
+            return redirect(url_for("general_bp.system_message")) 
     else:
         # make sure they are not accessing the page by typing in the url
         if(request.args.get('key')):
             # verify that their token is correct
             res=User.confirm_secret_key(request.args.get('key'))
             if res[0]:    
-                u=User.get_user(res[1]['email'])
+                u=User.get_user(email=res[1]['email'])
                 if u:
                     return render_template("set_password.html", form=form, email=u.email)
                 else:
                     # cannot find email
-                    msg="For some reason we couldn't find you registered in our system. Please contact help@fftsl.ca and we will get you sorted out."
-                    return redirect(url_for("general_bp.system_message",msg=msg))
+                    session['msg']="For some reason we couldn't find you registered in our system. Please contact help@fftsl.ca and we will get you sorted out."
+                    return redirect(url_for("general_bp.system_message"))
         else:
             # code is incorrect
             msg="The link you are trying to reach to reset your password is incorrect. Please contact help@fftsl.ca and we will get you sorted out."
@@ -82,19 +82,31 @@ def signup():
         try:
             # when we can register parents, we need to add pwd to this
 
-            u=User.register(user_type=form.user_type.data,email=form.email.data)
-            print('*******')
-            print(u)
-            if request.form['user_type'] == 'school':
-                s=School.register(name=request.form['school_name'])
-                
-            if u:
-                return redirect(url_for('email_bp.signup_email',user_type=request.form['user_type'],email=request.form['email'], school_name=request.form.get('school_name')))
+            res=User.register(user_type=form.user_type.data,email=form.email.data)
+            if res[0]:
+                u=res[1]
+                if request.form['user_type'] == 'school':
+                    res=School.register(name=request.form['school_name'], user_id=u.id)
+                    
+                    if res[0]:
+                        s=res[1]
+                    else:
+                        flash(f'Sorry, the following error occurred while registering the school name. Please contact help@fftsl.ca. {res[1]}')
+                        return redirect('/')
+                    
+                if u:
+                    return redirect(url_for('email_bp.signup_email',user_type=request.form['user_type'],email=request.form['email'], school_name=request.form.get('school_name')))
+                else:
+                    flash('Not sure what happened in signup, but please contact help@fftsl.ca.', 'failure_bkg')
+                    return render_template('signup.html', form=form)
             else:
-                flash('Not sure what happened in signup, but please contact help@fftsl.ca.', 'failure_bkg')
-                return render_template('signup.html', form=form)
+                # registration error
+                flash(f"Sorry the following error occurred while registering you. Please contact help@fftsl.ca. {res[1]}")
+                return redirect('/')
         except Exception as e:
-            return e
+            # error 
+            flash(f"Sorry the following error occurred while registering you. Please contact help@fftsl.ca. {res[1]}")
+            return redirect('/')
             
     else:
         return render_template('signup.html', form=form)
@@ -158,7 +170,7 @@ def check_login(f):
     @wraps(f)
     def decorated_func(*args,**kws):
         if CURR_USER_KEY in session:
-            g.user = User.query.get(session[CURR_USER_KEY])
+            g.user = User.get_user(id=session[CURR_USER_KEY])
         else:
             flash("You need to login first", "failure_bkg")
             g.user = None

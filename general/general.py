@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session
 
 # have to import the model for this here
 
@@ -16,5 +16,5 @@ def browsing():
 
 @general_bp.route('/system_message')
 def system_message():
-    msg=request.args['msg']
+    msg=session['msg']
     return render_template("message.html",msg=msg)
