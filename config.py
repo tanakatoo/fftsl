@@ -6,6 +6,7 @@ load_dotenv()
 #global constants
 CURR_USER_KEY='curr_user'
 
+
 class Config(object):
     
     # STATIC_FOLDER='static'

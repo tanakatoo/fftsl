@@ -1,41 +1,76 @@
 {% extends 'base.html' %}
-
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
 {% block title %}Provider's home{% endblock %}
 {% block content %}
 <h1>Provider Dashboard</h1>
-<section>
-    <div class="info">
-        <p>Just displaying saved info</p>
-        <ul>
-            <li>
-                Name: {{p.name}}
-            </li>
-            <li>
-                Address: {{p.address}}
-            </li>
-            <li>
-                City: {{p.city_id}}
-            </li>
-            <li>
-                Province: {{p.province_id}}
-            </li>
-            <li>
-                Phone: {{p.phone}}
-            </li>
-            <li>
-                Contact Name: {{p.contact_name}}
-            </li>
-            <li>
-                Sales pitch: {{p.sales_pitch}}
-            </li>
-            <li>
-                Active: {{p.active}}
-            </li>
-        </ul>
+<section class="info">
+    <p>Just displaying saved company info</p>
+    <ul>
+        <li>
+            Name: {{p.name}}
+        </li>
+        <li>
+            Address: {{p.address}}
+        </li>
+        <li>
+            City: {{city}}
+        </li>
+        <li>
+            Province: {{province}}
+        </li>
+        <li>
+            Contact Name: {{p.contact_name}}
+        </li>
+        <li>
+            Phone: {{p.phone}}
+        </li>
+        <li>
+            Email: {{email}}
+        </li>
+        <li>
+            Sales pitch: {{p.sales_pitch}}
+        </li>
+        <li>
+            Active: {{p.active}}
+        </li>
+    </ul>
 
-        </table>
+    <button><a href="/providers/edit_info">Edit</a></button>
 
-    </div>
+</section>
+
+<section class="menu">
+    <p>Saved menus and catering settings</p>
+    <ul>
+        <li>
+            Name: {{m.name}}
+        </li>
+        <li>
+            Passed: {{p.address}}
+        </li>
+        <li>
+            City: {{city}}
+        </li>
+        <li>
+            Province: {{province}}
+        </li>
+        <li>
+            Contact Name: {{p.contact_name}}
+        </li>
+        <li>
+            Phone: {{p.phone}}
+        </li>
+        <li>
+            Email: {{email}}
+        </li>
+        <li>
+            Sales pitch: {{p.sales_pitch}}
+        </li>
+        <li>
+            Active: {{p.active}}
+        </li>
+    </ul>
 </section>
 <p>allow them to their restaurant information, menu, etc. (should this page just be displaying data and not editing?
     Then a button to edit each component?)</p>

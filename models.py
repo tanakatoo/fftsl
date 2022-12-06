@@ -112,6 +112,11 @@ class City(db.Model):
     
     school=db.relationship('School', back_populates='city')
     provider=db.relationship('Provider', back_populates='city')
+    
+    @classmethod
+    def get_name(cls,id):
+        c=City.query.get(id)
+        return c.name
 
 class Province(db.Model):
     __tablename__='provinces'
@@ -126,11 +131,16 @@ class Province(db.Model):
     
     school=db.relationship('School', back_populates='province')
     provider=db.relationship('Provider', back_populates='province')
+    
+    @classmethod
+    def get_name(cls,id):
+        p=Province.query.get(id)
+        return p.name
 
 class School(db.Model):
     __tablename__='schools'
     def __repr__(self):
-        return f"<id={self.id}, name={self.name}>"
+        return f"<id={self.user_id}, name={self.name}>"
     
     user_id= db.Column(db.Integer,
                   db.ForeignKey('users.id'),
@@ -190,7 +200,7 @@ class Provider(db.Model):
     __tablename__='providers'
     
     def __repr__(self):
-        return f"<id={self.id}, name={self.name}>"
+        return f"<id={self.user_id}, name={self.name}>"
     
     user_id= db.Column(db.Integer,
                   db.ForeignKey('users.id'),
@@ -219,12 +229,83 @@ class Provider(db.Model):
     province=db.relationship("Province", back_populates="provider")
     recurring_days=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers")
     user=db.relationship('User', back_populates="provider")
+    dishes=db.relationship('Dish',back_populates="provider")
     
     @classmethod
     def get_provider(cls, u):
         try:
-            p=Provider.query.filter_by(user_id=u.id)
+            p=Provider.query.filter_by(user_id=u.id).first()
             return (True,p)
         except Exception as e:
             return (False,e)
    
+    @classmethod
+    def set_provider(cls, fp, u,p=None):
+        try:
+
+            if p:
+                # there is data, so they are updating
+                p.name=fp['name']
+                p.address=fp['address']
+                p.city_id=int(fp['city_id'])
+                p.province_id=int(fp['province_id'])
+                p.contact_name=fp['contact_name']
+                p.phone=fp['phone']
+                p.sales_pitch=fp['sales_pitch']
+                p.active=fp['active']
+            else:
+
+                # they are creating a record for the first time, make a new provider
+                p=Provider(user_id=u.id,
+                           name=fp['name'],
+                      address=fp['address'],
+                      city_id=int(fp['city_id']),
+                      province_id=int(fp['province_id']),
+                      contact_name=fp['contact_name'],
+                      phone=fp['phone'],
+                      sales_pitch=fp['sales_pitch'],
+                      active=fp['active'])
+            # also need to update email in user table
+            # get the user first
+            u=User.query.get(u.id)
+            u.email=fp['email']
+
+            db.session.add(u)
+            db.session.add(p)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
+
+class Dish(db.Model):
+    __tablename__="dishes"
+    
+    def __repr__(self):
+        return f"<id={self.user_id}, name={self.name}>"
+    
+    id= db.Column(db.Integer,
+                  primary_key=True,
+                  autoincrement=True)
+    provider_id=db.Column(db.Integer,
+                          db.ForeignKey('providers.user_id'),
+                          nullable=False)
+    name=db.Column(db.String(200),
+                   nullable=False, 
+                   unique=True)
+    recipe=db.Column(db.Text)
+    num_servings=db.Column(db.Integer)
+    ingred_disp=db.Column(db.Text)
+    price=db.Column(db.Numeric(5,2))
+    sales_pitch=db.Column(db.Text)
+    pass_guidelines=db.Column(db.Boolean,
+                              nullable=False,
+                              default=False)
+    max_meals=db.Column(db.Integer)
+    related_to_dish=db.Column(db.Integer)
+    
+    provider=db.relationship("Provider", back_populates="dishes")
+    
+    @classmethod
+    def get_menu(cls,id):
+        ds=Dish.query.filter_by(provider_id=id).all()
+        return ds

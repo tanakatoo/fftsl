@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
+{% block title %}Provider Edit Menu{% endblock %}
+{% block content %}
+<h1>Edit Menu Information</h1>
+
+<form id="menuEditForm" method="POST">
+    {{ form.hidden_tag() }}
+    <input type="hidden" id="geolat" name="geolat" />
+    <input type="hidden" id="geolong" name="geolong" />
+
+    <p>
+        {{form.name.label}}: {{form.name}}
+    </p>
+    <p>
+        {{form.address.label}}:
+    <div class="typedAddress">{{form.address}}
+        <div class="autoAddress">
+        </div>
+    </div>
+    </p>
+    <p>
+        {{form.city_id.label}}: {{form.city_id}}
+    </p>
+    <p>
+        {{form.province_id.label}}: {{form.province_id(disabled_="disabled")}}
+    </p>
+    <p>
+        {{form.contact_name.label}}: {{form.contact_name}}
+    </p>
+    <p>
+        {{form.phone.label}}: {{form.phone}}
+    </p>
+    <p>
+        <label for="email">Email</label>
+        <input type="email" name="email" value="{{email}}" />
+    </p>
+    <p>
+        {{form.sales_pitch.label}}: {{form.sales_pitch}}
+    </p>
+    <p>
+        {{form.active.label}}: {{form.active}}
+    </p>
+    <ul>
+        {%for field in form%}
+        {% for error in field.error %}
+
+        <li>{{ error }}</li>
+        {%endfor%}
+    </ul>
+    {% endfor %}
+
+    <button id="submit">Save</button>
+</form>
+
+
+{% endblock %}
+{% block scripts%}
+<script src="{{url_for('providers_bp.static',filename='providers_js.js')}}"></script>{% endblock%}

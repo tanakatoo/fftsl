@@ -1,47 +1,60 @@
 {% extends 'base.html' %}
 {% block header_area %}
-<link rel="stylesheet" href="{{url_for('auth_bp.static',filename='auth_css.css')}}">{% endblock %}
-{% block title %}Signup{% endblock %}
+<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
+{% block title %}Provider Edit Info{% endblock %}
 {% block content %}
-<h1>Signup Form</h1>
-<p>Signup parents (maybe?), or school, or providers</p>
-<p>add radio to show who they want to signup for (tell them the requirements ahead of time, like if you are signing
-    up as a provider,
-    you will be asked to send a proof of inspection, if you signup as a school, the principal of the school will be
-    contacted to confirm
-    participation. OR should they start signing up and THEN in the email confirmation we tell them this info? I think we
-    should
-    send them the email first (if they already started the process it's easier to continue than for them to not start
-    yet and already shoot them down)
-</p>
-<p>(if implementing)if parents signup they it will bring them to dashboard (just search and the restaurants they liked)
-</p>
-<form id="signupForm" method="POST">
+<h1>Edit Provider Information</h1>
+
+<form id="providerEditForm" method="POST" autocomplete="off" autocomplete="chrome-off">
     {{ form.hidden_tag() }}
+    <input type="hidden" id="geolat" name="geolat" />
+    <input type="hidden" id="geolong" name="geolong" />
+
     <p>
-        {{form.email.label(class_="red")}}
-        {{form.email}} <span id="emailError" class="error">{{form.email.errors.error}}</span>
+        {{form.name.label}}: {{form.name}}
     </p>
     <p>
-        {{form.user_type.label}}
-    <div id="selection">
-        {% for subfield in form.user_type %}
-        <tr>
-            <td>{{ subfield}}</td>
-            <td>{{ subfield.label }}</td>
-        </tr>
-        {% endfor %}
+        {{form.address.label}}:
+    <div class="typedAddress">{{form.address}}
+        <div class="autoAddress">
+        </div>
     </div>
     </p>
-    <div id="dispSchoolName" class="hide">
-        <p>
-            {{form.school_name.label}}
-            {{form.school_name}} <span class="error" id="schoolNameError">{{form.school_name.errors.error}}</span>
-        </p>
+    <p>
+        {{form.city_id.label}}: {{form.city_id}}
+    </p>
+    <p>
+        {{form.province_id.label}}: {{form.province_id(disabled_="disabled")}}
+    </p>
+    <p>
+        {{form.contact_name.label}}: {{form.contact_name}}
+    </p>
+    <p>
+        {{form.phone.label}}: {{form.phone}}
+    </p>
+    <p>
+        <label for="email">Email</label>
+        <input type="email" name="email" value="{{email}}" />
+    </p>
+    <p>
+        {{form.sales_pitch.label}}: {{form.sales_pitch}}
+    </p>
+    <p>
+        {{form.active.label}}: {{form.active}}
+    </p>
+    <ul>
+        {%for field in form%}
+        {% for error in field.error %}
 
-    </div>
+        <li>{{ error }}</li>
+        {%endfor%}
+    </ul>
+    {% endfor %}
 
-    <button id="submit">Signup</button>
+    <button id="submit">Save</button>
 </form>
-<script src="{{url_for('auth_bp.static',filename='auth_js.js')}}"></script>
+
+
 {% endblock %}
+{% block scripts%}
+<script src="{{url_for('providers_bp.static',filename='providers_js.js')}}"></script>{% endblock%}

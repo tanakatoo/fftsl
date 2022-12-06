@@ -13,3 +13,15 @@
 .notes{
     background-color:aliceblue ;
 }
+
+.typedAddress{
+    position: relative;
+    width: 500px;
+}
+
+.autoAddress{
+    position: absolute;
+    background-color: red;
+    width: auto;
+    cursor:pointer;
+}

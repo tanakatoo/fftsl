@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField
+from wtforms import SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField
 from wtforms.validators import InputRequired, Email, Length, NumberRange
 
 class PasswordReset(FlaskForm):
@@ -20,14 +20,27 @@ class Login(FlaskForm):
     
 class ProviderInfo(FlaskForm):
     name=StringField("Name of Restaurant/Caterer")
-    address=StringField("Address")
-    city=StringField("City")
-    province=StringField("Province")
+    address=StringField("Address", id="address")
+    city_id=SelectField("City")
+    province_id=SelectField("Province")
     contact_name=StringField("Contact Name")
     phone=StringField("Phone Number")
-    email=EmailField("Email")
-    sales_pitch=TextAreaField("Sales Pitch for Company")
+    sales_pitch=TextAreaField("Sales pitch:")
+    active=BooleanField("Account active", default=True)
+    
+class MenuInfo(FlaskForm):
+    name=StringField("Name of dish")
+    recipe=TextAreaField("Recipe for nutrition calculation")
+    num_servings=IntegerField("How many servings does this dish have?")
+    ingred_disp=TextAreaField("Recipe to display")
+    price=DecimalField("Price per serving")
+    sales_pitch=TextAreaField("What is special about your dish? Sell it here!")
+    pass_guidelines=BooleanField("Pass ministry guidelines")
+    max_meals=IntegerField("Maximum number of servings of this dish you can provide for one organization at one time")
+    related_to_dish=SelectField("Related to dish")
+    
+    
+class Settings(FlaskForm):
     max_meals_per_day=IntegerField("Maximum number of meals you can provide at one time to one organization", validators=[NumberRange(min=0)])
     min_meals=IntegerField("Minimum number of meals you will provide to one organization", validators=[NumberRange(min=0)])
     serve_num_org_per_day=IntegerField("How many organizations can you serve per day?", validators=[NumberRange(min=0)])
-    active=BooleanField("Deactivate account")
