@@ -15,7 +15,7 @@ def home():
     """ get info from db """
     p=Provider.get_provider(g.user)
     m=Dish.get_menu(g.user.id)
-    
+
     if p[0]:
         p=p[1]
         city=City.get_name(id=p.city_id)
@@ -58,16 +58,22 @@ def edit_info():
                 'phone':form.phone.data,
                 'email':request.form['email'],
                 'sales_pitch':form.sales_pitch.data,
-                'active':form.active.data
+                'active':form.active.data,
+                'geocode_lat': form.geocode_lat.data,
+                'geocode_long': form.geocode_long.data
             }
 
             res=Provider.set_provider(fp=p_form, u=g.user,p=p)
-
-            flash(f'Data saved!')
-            return redirect('/providers')
+            print("*************res data**")
+            print(res)
+            if res[0]:
+                flash(f'Data saved!')
+                return redirect('/providers')
+            else:
+                flash (f'An error occured saving data: {res[1]}.  Please contact help@fftsl.ca')
+                return render_template("providers_edit_info.html",form=form, email=g.user.email)
         else:
             # this is a get request
-            
             return render_template("providers_edit_info.html",form=form, email=g.user.email)
         
         

@@ -5,7 +5,7 @@ if (document.querySelector("#signupForm")) {
 
     // display school name input box only if school is selected
     document.querySelector("#selection").addEventListener("click", (e) => {
-        console.log(e.target.id)
+
         if (e.target.id == "user_type-1") {
             if (document.querySelector("#user_type-1").checked) {
                 document.querySelector("#dispSchoolName").classList.remove("hide")

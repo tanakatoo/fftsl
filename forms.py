@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField
+from wtforms import SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField, HiddenField
 from wtforms.validators import InputRequired, Email, Length, NumberRange
 
 class PasswordReset(FlaskForm):
@@ -27,6 +27,8 @@ class ProviderInfo(FlaskForm):
     phone=StringField("Phone Number")
     sales_pitch=TextAreaField("Sales pitch:")
     active=BooleanField("Account active", default=True)
+    geocode_lat=HiddenField("Whylat", id="geolat")
+    geocode_long=HiddenField("Whylong", id="geolong")
     
 class MenuInfo(FlaskForm):
     name=StringField("Name of dish")
@@ -38,6 +40,7 @@ class MenuInfo(FlaskForm):
     pass_guidelines=BooleanField("Pass ministry guidelines")
     max_meals=IntegerField("Maximum number of servings of this dish you can provide for one organization at one time")
     related_to_dish=SelectField("Related to dish")
+
     
     
 class Settings(FlaskForm):

@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 from flask import flash
 import random
+from decimal import Decimal
 
 db=SQLAlchemy()
 bcrypt=Bcrypt()
@@ -242,7 +243,15 @@ class Provider(db.Model):
     @classmethod
     def set_provider(cls, fp, u,p=None):
         try:
-
+             # change geocode to null if it is empty string
+            if fp['geocode_lat']=='':
+                geocode_lat=None
+            else:
+                geocode_lat=Decimal(fp['geocode_lat'])
+            if fp['geocode_long']=='':
+                geocode_long=None
+            else:
+                geocode_long=Decimal(fp['geocode_long'])
             if p:
                 # there is data, so they are updating
                 p.name=fp['name']
@@ -253,6 +262,9 @@ class Provider(db.Model):
                 p.phone=fp['phone']
                 p.sales_pitch=fp['sales_pitch']
                 p.active=fp['active']
+                p.geocode_lat=geocode_lat
+                p.geocode_long=geocode_long
+                
             else:
 
                 # they are creating a record for the first time, make a new provider
@@ -264,7 +276,9 @@ class Provider(db.Model):
                       contact_name=fp['contact_name'],
                       phone=fp['phone'],
                       sales_pitch=fp['sales_pitch'],
-                      active=fp['active'])
+                      active=fp['active'],
+                geocode_lat=geocode_lat,
+                geocode_long=geocode_long)
             # also need to update email in user table
             # get the user first
             u=User.query.get(u.id)
@@ -273,6 +287,7 @@ class Provider(db.Model):
             db.session.add(u)
             db.session.add(p)
             db.session.commit()
+            return (True, p)
         except Exception as e:
             db.session.rollback()
             return (False,e)
@@ -281,7 +296,7 @@ class Dish(db.Model):
     __tablename__="dishes"
     
     def __repr__(self):
-        return f"<id={self.user_id}, name={self.name}>"
+        return f"<id={self.id}, name={self.name}, pass_guidelines={self.pass_guidelines}>"
     
     id= db.Column(db.Integer,
                   primary_key=True,

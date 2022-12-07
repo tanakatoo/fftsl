@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Provider Dashboard</h1>
 <section class="info">
-    <p>Just displaying saved company info</p>
+    <h3>company info</h3>
     <ul>
         <li>
             Name: {{p.name}}
@@ -41,34 +41,53 @@
 </section>
 
 <section class="menu">
-    <p>Saved menus and catering settings</p>
+    <p>Saved menus</p>
+    {%if m%}
+    <ul>
+        {%for dish in m %}
+        <li>
+            Name: {{dish.name}}
+        </li>
+
+        <li>
+            Recipe: {%if dish.recipe %}{{dish.recipe}}{% endif %}
+        </li>
+        <li>
+            Number of servings: {%if dish.num_servings %}{{dish.num_servings}}{% endif %}
+        </li>
+        <li>
+            Recipe to display:{%if dish.ingred_disp %}{{dish.ingred_disp}}{% endif %}
+        </li>
+        <li>
+            Price: {%if dish.price %}{{dish.price}}{% endif %}
+        </li>
+        <li>
+            Sales pitch: {%if dish.sales_pitch %}{{dish.sales_pitch}}{% endif %}
+        </li>
+        <li>
+            Max meals you can serve: {%if dish.max_meals %}{{dish.max_meals}}{% endif %}
+        </li>
+        <li>
+            Related to: {%if dish.related_to_dish %}{{dish.related_to_dish}}{% endif %}
+        </li>
+        <li>
+            Passed guidelines: {%if dish.pass_guidelines %}{{p.pass_guidelines}}{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {%else%}
+    <p>No menus yet, make one soon!</p>
+    {%endif%}
+    <h3>Catering settings</h3>
     <ul>
         <li>
-            Name: {{m.name}}
+            Number of meals you can serve at one time for one organization: {{p.max_meals_per_day}}
         </li>
         <li>
-            Passed: {{p.address}}
+            Minimum number of meals you will serve at one time for one organization: {{p.min_meals}}
         </li>
         <li>
-            City: {{city}}
-        </li>
-        <li>
-            Province: {{province}}
-        </li>
-        <li>
-            Contact Name: {{p.contact_name}}
-        </li>
-        <li>
-            Phone: {{p.phone}}
-        </li>
-        <li>
-            Email: {{email}}
-        </li>
-        <li>
-            Sales pitch: {{p.sales_pitch}}
-        </li>
-        <li>
-            Active: {{p.active}}
+            Number of organizations you can serve in one day: {{p.serve_num_org_per_day}}
         </li>
     </ul>
 </section>

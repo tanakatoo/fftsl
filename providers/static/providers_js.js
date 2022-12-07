@@ -9,6 +9,9 @@ function getAddresses() {
 
         if (timer) {
             clearTimeout(timer)
+            if (document.querySelector("#addressTable")) {
+                document.querySelector("#addressTable").remove()
+            }
         }
         // we are limited to Ontario, Canada right now, so search only those
         try {
@@ -27,12 +30,14 @@ function getAddresses() {
                 })
 
                 // put all address information in an array of objects
+                console.log(res.data.results)
                 showAddresses = makeAddressObject(res)
                 // make a table under the input box for the results
                 table = makeAutoCompleteTable(showAddresses)
                 // add click event on table and remove table once selected
-                selectAddress(table, showAddresses)
-
+                if (res.data.results) {
+                    selectAddress(table, showAddresses)
+                }
 
             }, 1500)
         } catch (e) {
@@ -72,6 +77,7 @@ function makeAutoCompleteTable(showAddresses) {
 
     let tableDiv = document.querySelector(".autoAddress")
     let table = document.createElement('table')
+    table.id = "addressTable"
     let tblBody = document.createElement('tbody')
 
     // create one cell for each address line
@@ -81,6 +87,18 @@ function makeAutoCompleteTable(showAddresses) {
         const cell = document.createElement("td");
         const cellText = document.createTextNode(showAddresses[i].fullAddress);
         cell.dataset.id = i
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+
+        tblBody.appendChild(row);
+    }
+    // put no address found if results returned empty
+    if (showAddresses.length == 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        const cellText = document.createTextNode("No address found");
+        table.className = "noPointer"
+        cell.dataset.id = "none"
         cell.appendChild(cellText);
         row.appendChild(cell);
 
@@ -143,3 +161,18 @@ function completeAddress(id, showAddresses) {
     document.querySelector("#geolat").value = showAddresses[id].lat
     document.querySelector("#geolong").value = showAddresses[id].long
 }
+
+document.querySelector("#submit").addEventListener("click", (e) => {
+    // Check that the name is not empty
+    if (document.querySelector("#name").value.trim() == "") {
+        document.querySelector("#nameError").innerText = "Name cannot be blank."
+        e.preventDefault()
+    }
+
+    // if address is empty, remove the geocodes
+    if (document.querySelector("#address").value.trim() == "") {
+        document.querySelector("#geolat").value = null
+        document.querySelector("#geolong").value = null
+    }
+
+})

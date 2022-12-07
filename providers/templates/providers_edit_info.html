@@ -7,13 +7,13 @@
 
 <form id="providerEditForm" method="POST" autocomplete="off" autocomplete="chrome-off">
     {{ form.hidden_tag() }}
-    <input type="hidden" id="geolat" name="geolat" />
-    <input type="hidden" id="geolong" name="geolong" />
+    {{form.geocode_lat}}
+    {{form.geocode_long}}
 
     <p>
-        {{form.name.label}}: {{form.name}}
+        {{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
     </p>
-    <p>
+    <p><span>Please select from autocomplete. This will ensure our search feature will work. </span><br>
         {{form.address.label}}:
     <div class="typedAddress">{{form.address}}
         <div class="autoAddress">
