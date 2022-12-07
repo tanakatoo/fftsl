@@ -7,37 +7,49 @@
 
 <form id="menuEditForm" method="POST">
     {{ form.hidden_tag() }}
-    <input type="hidden" id="geolat" name="geolat" />
-    <input type="hidden" id="geolong" name="geolong" />
 
+
+
+
+
+
+
+    Max meals you can serve: {%if dish.max_meals %}{{dish.max_meals}}{% endif %}
+    </li>
+    <li>
+        Related to: {%if dish.related_to_dish %}{{dish.related_to_dish}}{% endif %}
+    </li>
+    <li>
+        Passed guidelines: {%if dish.pass_guidelines %}{{p.pass_guidelines}}{% endif %}
+    </li>
     <p>
-        {{form.name.label}}: {{form.name}}
+        Name: {{dish.name}}
     </p>
     <p>
-        {{form.address.label}}:
-    <div class="typedAddress">{{form.address}}
-        <div class="autoAddress">
-        </div>
-    </div>
+        Recipe: {%if dish.recipe %}{{dish.recipe}}{% endif %}
+
     </p>
     <p>
-        {{form.city_id.label}}: {{form.city_id}}
+        Number of servings: {%if dish.num_servings %}{{dish.num_servings}}{% endif %}
     </p>
     <p>
-        {{form.province_id.label}}: {{form.province_id(disabled_="disabled")}}
+        Recipe to display:{%if dish.ingred_disp %}{{dish.ingred_disp}}{% endif %}
     </p>
     <p>
-        {{form.contact_name.label}}: {{form.contact_name}}
+        Price: {%if dish.price %}{{dish.price}}{% endif %}
     </p>
     <p>
-        {{form.phone.label}}: {{form.phone}}
-    </p>
-    <p>
-        <label for="email">Email</label>
-        <input type="email" name="email" value="{{email}}" />
-    </p>
     <p>
         {{form.sales_pitch.label}}: {{form.sales_pitch}}
+    </p>
+    <p>
+        {{form_m.max_meals.label}}{%if form_m.max_meals %}{{dish.max_meals}}{% endif %}
+    </p>
+    <p>
+        {{form.active.label}}: {{form.active}}
+    </p>
+    <p>
+        {{form.active.label}}: {{form.active}}
     </p>
     <p>
         {{form.active.label}}: {{form.active}}

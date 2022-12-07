@@ -38,8 +38,8 @@ class ProdConfig(Config):
 
 class DevConfig(Config):
     FLASK_ENV='development'
-    DEBUG=True
-    FLASK_DEBUG=True
+    DEBUG=True 
+    FLASK_DEBUG=True #this doesn't work, have to set EXPORT DEBUG=True in terminal
     TESTING=True
     SQLALCHEMY_DATABASE_URI=os.environ.get('DEV_DATABASE_URI')
     DEBUG_TB_INTERCEPT_REDIRECTS= False

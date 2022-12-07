@@ -7,8 +7,6 @@
 
 <form id="providerEditForm" method="POST" autocomplete="off" autocomplete="chrome-off">
     {{ form.hidden_tag() }}
-    {{form.geocode_lat}}
-    {{form.geocode_long}}
 
     <p>
         {{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
@@ -24,7 +22,7 @@
         {{form.city_id.label}}: {{form.city_id}}
     </p>
     <p>
-        {{form.province_id.label}}: {{form.province_id(disabled_="disabled")}}
+        {{form.province_id.label}}: {{form.province_id}}
     </p>
     <p>
         {{form.contact_name.label}}: {{form.contact_name}}
@@ -43,13 +41,13 @@
         {{form.active.label}}: {{form.active}}
     </p>
     <ul>
-        {%for field in form%}
-        {% for error in field.error %}
 
-        <li>{{ error }}</li>
-        {%endfor%}
+        {% for field,error in form.errors.items() %}
+
+        <li>{{field}},{{error}}</li>
+        {% endfor%}
     </ul>
-    {% endfor %}
+
 
     <button id="submit">Save</button>
 </form>
@@ -57,4 +55,4 @@
 
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('providers_bp.static',filename='providers_js.js')}}"></script>{% endblock%}
+<script src="{{url_for('providers_bp.static',filename='edit_info_js.js')}}"></script>{% endblock%}

@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField, HiddenField
-from wtforms.validators import InputRequired, Email, Length, NumberRange
+from wtforms.validators import InputRequired, Email, Length, NumberRange, Optional
 
 class PasswordReset(FlaskForm):
     email=EmailField("Email", validators=[InputRequired(), Email()])
@@ -19,7 +19,7 @@ class Login(FlaskForm):
     password=PasswordField("Password", validators=[InputRequired(),Length(min=8)])
     
 class ProviderInfo(FlaskForm):
-    name=StringField("Name of Restaurant/Caterer")
+    name=StringField("Name of Restaurant/Caterer", validators=[InputRequired()])
     address=StringField("Address", id="address")
     city_id=SelectField("City")
     province_id=SelectField("Province")
@@ -42,8 +42,7 @@ class MenuInfo(FlaskForm):
     related_to_dish=SelectField("Related to dish")
 
     
-    
 class Settings(FlaskForm):
-    max_meals_per_day=IntegerField("Maximum number of meals you can provide at one time to one organization", validators=[NumberRange(min=0)])
-    min_meals=IntegerField("Minimum number of meals you will provide to one organization", validators=[NumberRange(min=0)])
-    serve_num_org_per_day=IntegerField("How many organizations can you serve per day?", validators=[NumberRange(min=0)])
+    max_meals_per_day=StringField("Maximum number of meals you can provide at one time to one organization")
+    min_meals=StringField("Minimum number of meals you will provide to one organization")
+    serve_num_org_per_day=StringField("How many organizations can you serve per day?")

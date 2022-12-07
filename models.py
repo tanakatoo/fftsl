@@ -219,18 +219,18 @@ class Provider(db.Model):
     contact_name=db.Column(db.String(100))
     phone=db.Column(db.String(50))
     sales_pitch=db.Column(db.Text)
-    max_meals_per_day=db.Column(db.Integer)
-    min_meals=db.Column(db.Integer)
-    serve_num_org_per_day=db.Column(db.Integer)
+    max_meals_per_day=db.Column(db.String(50))
+    min_meals=db.Column(db.String(50))
+    serve_num_org_per_day=db.Column(db.String(50))
     active=db.Column(db.Boolean, 
                      nullable=False,
                      default=True)
     
     city=db.relationship("City", back_populates="provider")
     province=db.relationship("Province", back_populates="provider")
-    recurring_days=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers")
+    recurring_days=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers", cascade='save-update, merge, delete')
     user=db.relationship('User', back_populates="provider")
-    dishes=db.relationship('Dish',back_populates="provider")
+    dishes=db.relationship('Dish',back_populates="provider", cascade='save-update, merge, delete')
     
     @classmethod
     def get_provider(cls, u):
@@ -239,6 +239,7 @@ class Provider(db.Model):
             return (True,p)
         except Exception as e:
             return (False,e)
+
    
     @classmethod
     def set_provider(cls, fp, u,p=None):
@@ -317,10 +318,68 @@ class Dish(db.Model):
                               default=False)
     max_meals=db.Column(db.Integer)
     related_to_dish=db.Column(db.Integer)
+    active=db.Column(db.Boolean,
+                     nullable=False,
+                     default=True)
     
     provider=db.relationship("Provider", back_populates="dishes")
     
     @classmethod
-    def get_menu(cls,id):
-        ds=Dish.query.filter_by(provider_id=id).all()
-        return ds
+    def get_menu(cls,u):
+        try:
+            m=Dish.query.filter_by(provider_id=u.id).first()
+            return (True,m)
+        except Exception as e:
+            return (False,e)
+
+    @classmethod
+    def set_menu(cls, fp, u,p=None):
+        try:
+             # change geocode to null if it is empty string
+            if fp['geocode_lat']=='':
+                geocode_lat=None
+            else:
+                geocode_lat=Decimal(fp['geocode_lat'])
+            if fp['geocode_long']=='':
+                geocode_long=None
+            else:
+                geocode_long=Decimal(fp['geocode_long'])
+            if p:
+                # there is data, so they are updating
+                p.name=fp['name']
+                p.address=fp['address']
+                p.city_id=int(fp['city_id'])
+                p.province_id=int(fp['province_id'])
+                p.contact_name=fp['contact_name']
+                p.phone=fp['phone']
+                p.sales_pitch=fp['sales_pitch']
+                p.active=fp['active']
+                p.geocode_lat=geocode_lat
+                p.geocode_long=geocode_long
+                
+            else:
+
+                # they are creating a record for the first time, make a new provider
+                p=Provider(user_id=u.id,
+                           name=fp['name'],
+                      address=fp['address'],
+                      city_id=int(fp['city_id']),
+                      province_id=int(fp['province_id']),
+                      contact_name=fp['contact_name'],
+                      phone=fp['phone'],
+                      sales_pitch=fp['sales_pitch'],
+                      active=fp['active'],
+                geocode_lat=geocode_lat,
+                geocode_long=geocode_long)
+            # also need to update email in user table
+            # get the user first
+            u=User.query.get(u.id)
+            u.email=fp['email']
+
+            db.session.add(u)
+            db.session.add(p)
+            db.session.commit()
+            return (True, p)
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
