@@ -20,7 +20,7 @@ def connect_db(app):
 class User(db.Model):
     __tablename__='users'
     def __repr__(self):
-        return f"<id={self.id}, email={self.email}>"
+        return f"<id={self.id}, email={self.email}, user_type={self.user_type}, active={self.active}>"
     
     id= db.Column(db.Integer,
                   primary_key=True,
@@ -115,6 +115,10 @@ class City(db.Model):
     provider=db.relationship('Provider', back_populates='city')
     
     @classmethod
+    def get_cities(cls):
+        return City.query.all()
+    
+    @classmethod
     def get_name(cls,id):
         c=City.query.get(id)
         return c.name
@@ -137,6 +141,11 @@ class Province(db.Model):
     def get_name(cls,id):
         p=Province.query.get(id)
         return p.name
+    
+    @classmethod
+    def get_provinces(cls):
+        p=Province.query.all()
+        return p
 
 class School(db.Model):
     __tablename__='schools'
@@ -201,7 +210,20 @@ class Provider(db.Model):
     __tablename__='providers'
     
     def __repr__(self):
-        return f"<id={self.user_id}, name={self.name}>"
+        return f"""<id={self.user_id}, name={self.name}, 
+            address={self.address},
+            city_id={self.city_id},
+            province_id={self.province_id},
+            geocode_lat={self.geocode_lat},
+            geocode_long={self.geocode_long},
+            contact_name={self.contact_name},
+            phone={self.phone},
+            sales_pitch={self.sales_pitch},
+            max_meals_per_day={self.max_meals_per_day}
+            min_meals={self.min_meals},
+            serve_num_org_per_day={self.serve_num_org_per_day},
+            active={self.active}>
+            """
     
     user_id= db.Column(db.Integer,
                   db.ForeignKey('users.id'),
@@ -231,6 +253,7 @@ class Provider(db.Model):
     recurring_days=db.relationship("Recurring_Days", secondary="recurring_availabilities",back_populates="providers", cascade='save-update, merge, delete')
     user=db.relationship('User', back_populates="provider")
     dishes=db.relationship('Dish',back_populates="provider", cascade='save-update, merge, delete')
+    cuisines=db.relationship("Cuisine", secondary="cuisine_providers",back_populates="providers", cascade='save-update, merge, delete')
     
     @classmethod
     def get_provider(cls, u):
@@ -293,6 +316,18 @@ class Provider(db.Model):
             db.session.rollback()
             return (False,e)
 
+    def set_settings(self,fp):
+        try:
+            self.max_meals_per_day=fp['max_meals_per_day']
+            self.min_meals=fp['min_meals']
+            self.serve_num_org_per_day=fp['serve_num_org_per_day']
+            
+            db.session.add(self)
+            db.session.commit()
+            return (True,self)
+        except Exception as e:
+            return (False,e)
+   
 class Dish(db.Model):
     __tablename__="dishes"
     
@@ -327,59 +362,128 @@ class Dish(db.Model):
     @classmethod
     def get_menu(cls,u):
         try:
-            m=Dish.query.filter_by(provider_id=u.id).first()
+            m=Dish.query.filter_by(provider_id=u.id).all()
             return (True,m)
         except Exception as e:
             return (False,e)
 
     @classmethod
-    def set_menu(cls, fp, u,p=None):
+    def get_dish(cls,id):
         try:
-             # change geocode to null if it is empty string
-            if fp['geocode_lat']=='':
-                geocode_lat=None
-            else:
-                geocode_lat=Decimal(fp['geocode_lat'])
-            if fp['geocode_long']=='':
-                geocode_long=None
-            else:
-                geocode_long=Decimal(fp['geocode_long'])
-            if p:
-                # there is data, so they are updating
-                p.name=fp['name']
-                p.address=fp['address']
-                p.city_id=int(fp['city_id'])
-                p.province_id=int(fp['province_id'])
-                p.contact_name=fp['contact_name']
-                p.phone=fp['phone']
-                p.sales_pitch=fp['sales_pitch']
-                p.active=fp['active']
-                p.geocode_lat=geocode_lat
-                p.geocode_long=geocode_long
-                
-            else:
+            d=Dish.query.get(id)
+            return (True,d)
+        except Exception as e:
+            return (False,e)
+        
+    @classmethod
+    def set_dish(cls, fd):
+        """make a record of a new dish"""
 
-                # they are creating a record for the first time, make a new provider
-                p=Provider(user_id=u.id,
-                           name=fp['name'],
-                      address=fp['address'],
-                      city_id=int(fp['city_id']),
-                      province_id=int(fp['province_id']),
-                      contact_name=fp['contact_name'],
-                      phone=fp['phone'],
-                      sales_pitch=fp['sales_pitch'],
-                      active=fp['active'],
-                geocode_lat=geocode_lat,
-                geocode_long=geocode_long)
-            # also need to update email in user table
-            # get the user first
-            u=User.query.get(u.id)
-            u.email=fp['email']
-
-            db.session.add(u)
-            db.session.add(p)
+        if fd['related_to_dish']=='':
+            related_to_dish=None
+        else:
+            related_to_dish=int(fd['related_to_dish'])
+        if fd['num_servings']=='' or fd['num_servings'] is None:
+            num_servings=None
+        else:
+            num_servings=int(fd['num_servings'])
+        if fd['price']=='' or fd['price'] is None:
+            price=None
+        else:
+            price=Decimal(fd['price'])
+        if fd['max_meals']=='' or fd['max_meals'] is None:
+            max_meals=None
+        else:
+            max_meals=int(fd['max_meals'])
+        
+        try:
+            d=Dish(provider_id=fd['provider_id'],
+                        name=fd['name'],
+                        recipe=fd['recipe'],
+                        num_servings=num_servings,
+                        ingred_disp=fd['ingred_disp'],
+                        price=price,
+                        sales_pitch=fd['sales_pitch'],
+                        max_meals=max_meals,
+                        related_to_dish=related_to_dish,
+                        pass_guidelines=fd['pass_guidelines'],
+                        active=fd['active']
+                   )
+            print(d)
+            db.session.add(d)
             db.session.commit()
-            return (True, p)
+            return (True, d)
         except Exception as e:
             db.session.rollback()
             return (False,e)
+
+class Cuisine(db.Model):
+    __tablename__="cuisines"
+    
+    def __repr__(self):
+        return f"<id={self.id}, name={self.name}>"
+    
+    id= db.Column(db.Integer,
+                  primary_key=True,
+                  autoincrement=True)
+    name=db.Column(db.String(50), 
+                   unique=True)
+     
+    providers=db.relationship("Provider", secondary="cuisine_providers",back_populates="cuisines")
+
+    @classmethod
+    def get_all_cuisines(cls):
+        try:
+            c=Cuisine.query.all()
+            return (True,c)
+        except Exception as e:
+            return (False,e)
+    
+    @classmethod
+    def set_cuisine(cls, name):
+        try:
+            c=Cuisine(name=name)
+            db.session.add(c)
+            db.session.commit()
+            return (True,c)
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
+
+class Cuisine_Provider(db.Model):
+    __tablename__='cuisine_providers'
+    def __repr__(self):
+        return f"<provider_id={self.provider_id}, cuisine_id={self.cuisine_id}>"
+    
+    provider_id= db.Column(db.Integer,
+                           db.ForeignKey('providers.user_id'),
+                           primary_key=True)
+    cuisine_id= db.Column(db.Integer,
+                                db.ForeignKey('cuisines.id'),
+                                primary_key=True)
+    
+    @classmethod
+    def get_cuisines(cls,u):
+        try:
+            c=Cuisine_Provider.query.filter_by(provider_id=u.id).all()
+            return (True, c)
+        except Exception as e:
+            return (False, e)
+    
+    @classmethod
+    def set_cuisines(cls,u,fc):
+        try:
+            # fc is list of the cuisine IDs
+            # delete all the records associated with user first
+            Cuisine_Provider.query.filter_by(provider_id=u.id).delete()
+            db.session.commit()
+            # then add all the records again
+            for id in fc:
+                c=Cuisine_Provider(provider_id=u.id,cuisine_id=id)
+                db.session.add(c)
+                db.session.commit()
+
+            return (True, fc)
+        except Exception as e:
+            db.session.rollback()
+            return (False, e)

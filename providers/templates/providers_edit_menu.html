@@ -4,58 +4,58 @@
 {% block title %}Provider Edit Menu{% endblock %}
 {% block content %}
 <h1>Edit Menu Information</h1>
-
-<form id="menuEditForm" method="POST">
-    {{ form.hidden_tag() }}
-
-
-
-
-
-
-
-    Max meals you can serve: {%if dish.max_meals %}{{dish.max_meals}}{% endif %}
-    </li>
-    <li>
-        Related to: {%if dish.related_to_dish %}{{dish.related_to_dish}}{% endif %}
-    </li>
-    <li>
-        Passed guidelines: {%if dish.pass_guidelines %}{{p.pass_guidelines}}{% endif %}
-    </li>
+<h3>Settings</h3>
+<form id="settingsEditForm" method="POST" action="{{url_for('providers_bp.save_settings')}}">
+    {{ form_p.hidden_tag() }}
     <p>
-        Name: {{dish.name}}
+        {{form_p.max_meals_per_day.label}} {{form_p.max_meals_per_day}}
     </p>
     <p>
-        Recipe: {%if dish.recipe %}{{dish.recipe}}{% endif %}
+        {{form_p.min_meals.label}} {{form_p.min_meals}}
+    </p>
+    <p>
+        {{form_p.serve_num_org_per_day.label}} {{form_p.serve_num_org_per_day}}
+    </p>
+    <button id="submit">Save settings</button>
+</form>
+<h3>Add dish</h3>
+<form id="menuEditForm" method="POST" action="{{url_for('providers_bp.save_dish')}}">
+    {{ form_m.hidden_tag() }}
+
+    <p>
+        {{form_m.name.label}} {{form_m.name}}
+    </p>
+    <p>
+        {{form_m.recipe.label}} {{form_m.recipe}}
 
     </p>
     <p>
-        Number of servings: {%if dish.num_servings %}{{dish.num_servings}}{% endif %}
+        {{form_m.num_servings.label}} {{form_m.num_servings}}
     </p>
     <p>
-        Recipe to display:{%if dish.ingred_disp %}{{dish.ingred_disp}}{% endif %}
+        {{form_m.ingred_disp.label}} {{form_m.ingred_disp}}
     </p>
     <p>
-        Price: {%if dish.price %}{{dish.price}}{% endif %}
+        {{form_m.price.label}} {{form_m.price}}
+    </p>
+
+    <p>
+        {{form_m.sales_pitch.label}}: {{form_m.sales_pitch}}
     </p>
     <p>
-    <p>
-        {{form.sales_pitch.label}}: {{form.sales_pitch}}
+        {{form_m.max_meals.label}}{{form_m.max_meals}}
     </p>
     <p>
-        {{form_m.max_meals.label}}{%if form_m.max_meals %}{{dish.max_meals}}{% endif %}
+        {{form_m.related_to_dish.label}}: {{form_m.related_to_dish}}
     </p>
     <p>
-        {{form.active.label}}: {{form.active}}
+        {{form_m.pass_guidelines.label}}: {{form_m.pass_guidelines}}
     </p>
     <p>
-        {{form.active.label}}: {{form.active}}
-    </p>
-    <p>
-        {{form.active.label}}: {{form.active}}
+        {{form_m.active.label}}: {{form_m.active}}
     </p>
     <ul>
-        {%for field in form%}
+        {% for field in form_m %}
         {% for error in field.error %}
 
         <li>{{ error }}</li>
@@ -66,7 +66,30 @@
     <button id="submit">Save</button>
 </form>
 
+<h3>Saved dishes</h3>
+<p>List in a table the dishes that were saved</p>
+<table>
+    <thead>
+        <tr>
+            <td>name</td>
+            <td>price</td>
+            <td>passed guidelines</td>
+        </tr>
+    </thead>
+    <tbody>
+        {%for d in m%}
+        <tr>
+            <td>{{d.name}}</td>
+            <td>{{d.price}}</td>
+            <td>{%if d.pass_guidelines %}true{%else%}false{%endif%}</td>
 
+        </tr>
+        {%endfor%}
+
+
+    </tbody>
+
+</table>
 {% endblock %}
 {% block scripts%}
 <script src="{{url_for('providers_bp.static',filename='providers_js.js')}}"></script>{% endblock%}

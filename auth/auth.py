@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session,g
 from functools import wraps
 from models import User, School
-from forms import PasswordReset, PasswordSet, Login, UserRegister
+from forms import PasswordResetForm, PasswordSetForm, LoginForm, UserRegisterForm
 from config import CURR_USER_KEY
 
 # have to import the model for this here
@@ -14,7 +14,7 @@ auth_bp = Blueprint('auth_bp', __name__,
 # all go to the root of this, which is defined in app.py ('/products')
 @auth_bp.route('/reset_password', methods=['POST', 'GET'])
 def reset_password():
-    form=PasswordReset()
+    form=PasswordResetForm()
     if form.validate_on_submit():
         # get the email and see if it's in the db
         u=User.get_user(email=form.email.data)
@@ -36,7 +36,7 @@ def reset_password():
 
 @auth_bp.route('/set_password',methods=['POST','GET'])
 def set_password():
-    form=PasswordSet()
+    form=PasswordSetForm()
     if form.validate_on_submit():
         email=request.form['email']
         pwd=request.form['password']
@@ -77,7 +77,7 @@ def set_password():
 
 @auth_bp.route('/signup', methods=["GET","POST"])
 def signup():
-    form=UserRegister()
+    form=UserRegisterForm()
     if form.validate_on_submit():
         try:
             # when we can register parents, we need to add pwd to this
@@ -133,7 +133,7 @@ def signup():
 @auth_bp.route('/login', methods=['POST','GET'])
 def login():
     """Log in user."""
-    form=Login()
+    form=LoginForm()
     if form.validate_on_submit():
         u=User.authenticate(email=form.email.data,pwd=form.password.data)
         if u:

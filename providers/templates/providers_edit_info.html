@@ -37,6 +37,24 @@
     <p>
         {{form.sales_pitch.label}}: {{form.sales_pitch}}
     </p>
+
+    <p>
+        {% set a=namespace(quit = False) %}
+        {% for c in form_c.cuisines %}
+        {% for id in pc if not a.quit %}
+        {%if id.cuisine_id == c.data %}
+        {{c(checked=True)}}
+        {% set a.quit = True%}
+        {%endif%}
+        {%endfor%}
+        {%if not a.quit%}
+        {{c}}
+        {%endif %}
+        {%set a.quit = False%}
+
+        {{c.label}}
+        {% endfor %}
+    </p>
     <p>
         {{form.active.label}}: {{form.active}}
     </p>

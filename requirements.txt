@@ -18,7 +18,7 @@ Flask-Bcrypt==1.0.1
 Flask-DebugToolbar==0.13.1
 Flask-DotEnv==0.1.2
 Flask-Mail==0.9.1
-Flask-SQLAlchemy==3.0.2
+Flask-SQLAlchemy==2.5.1
 Flask-WTF==1.0.1
 greenlet==2.0.1
 idna==3.4
