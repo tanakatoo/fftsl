@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import widgets, SelectMultipleField, SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField, HiddenField
+from wtforms import DateField, widgets, SelectMultipleField, SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField, HiddenField
 from wtforms.validators import InputRequired, Email, Length, NumberRange, Optional
 
 class PasswordResetForm(FlaskForm):
@@ -29,6 +29,7 @@ class ProviderInfoForm(FlaskForm):
     active=BooleanField("Account active", default=True)
     geocode_lat=HiddenField(id="geolat")
     geocode_long=HiddenField(id="geolong")
+    
 
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
@@ -37,6 +38,9 @@ class MultiCheckboxField(SelectMultipleField):
     
 class CuisineForm(FlaskForm):
     cuisines = MultiCheckboxField('Cuisine', coerce=int)
+
+class DaysForm(FlaskForm):
+    days = MultiCheckboxField('Available every', coerce=int)
     
 class DishInfoForm(FlaskForm):
     name=StringField("Name of dish", validators=[InputRequired()])
@@ -49,9 +53,11 @@ class DishInfoForm(FlaskForm):
     max_meals=IntegerField("Maximum number of servings of this dish you can provide for one organization at one time",validators=[Optional(strip_whitespace=True)])
     related_to_dish=SelectField("Related to dish")
     active=BooleanField("Active")
+    
 
     
 class SettingsForm(FlaskForm):
     max_meals_per_day=StringField("Maximum number of meals you can provide at one time to one organization")
     min_meals=StringField("Minimum number of meals you will provide to one organization")
     serve_num_org_per_day=StringField("How many organizations can you serve per day?")
+    dates=HiddenField(id="dates_avail")

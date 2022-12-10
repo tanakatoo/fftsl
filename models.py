@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from flask import flash
 import random
 from decimal import Decimal
+from datetime import date, datetime
 
 db=SQLAlchemy()
 bcrypt=Bcrypt()
@@ -193,11 +194,19 @@ class Recurring_Days(db.Model):
                    unique=True)
     
     providers=db.relationship("Provider", secondary="recurring_availabilities",back_populates="recurring_days")
+    
+    @classmethod
+    def get_all_days(cls):
+        try:
+            d=Recurring_Days.query.all()
+            return (True,d)
+        except Exception as e:
+            return (False,e)
 
 class Recurring_availability(db.Model):
     __tablename__='recurring_availabilities'
     def __repr__(self):
-        return f"<id={self.id}, provider_id={self.provider_id}, recurring_day_id={self.recurring_day_id}>"
+        return f"provider_id={self.provider_id}, recurring_day_id={self.recurring_day_id}>"
     
     provider_id= db.Column(db.Integer,
                            db.ForeignKey('providers.user_id'),
@@ -205,6 +214,91 @@ class Recurring_availability(db.Model):
     recurring_day_id= db.Column(db.Integer,
                                 db.ForeignKey('recurring_days.id'),
                                 primary_key=True)
+    
+    @classmethod
+    def get_days(cls,u):
+        try:
+            d=Recurring_availability.query.filter_by(provider_id=u.id).all()
+            return (True, d)
+        except Exception as e:
+            return (False, e)
+    
+    @classmethod
+    def set_days(cls,u,fd):
+        try:
+            # fd is list of the days IDs
+            # delete all the records associated with user first
+            Recurring_availability.query.filter_by(provider_id=u.id).delete()
+            db.session.commit()
+            # then add all the records again
+            for id in fd:
+                d=Recurring_availability(provider_id=u.id,recurring_day_id=id)
+                db.session.add(d)
+                db.session.commit()
+
+            return (True, fd)
+        except Exception as e:
+            db.session.rollback()
+            return (False, e)
+
+class Date_provider_avail(db.Model):
+    __tablename__='dates_provider_avail'
+    def __repr__(self):
+        return f"<provider_id={self.provider_id}, date={self.date}>"
+
+    provider_id= db.Column(db.Integer,
+                           db.ForeignKey('providers.user_id'),
+                           primary_key=True)
+    date = db.Column(db.Date,
+                     primary_key=True,
+                     nullable=False)
+    
+    providers=db.relationship('Provider',back_populates="dates_provider_avail")
+    
+    @classmethod
+    def set_dates(cls,u,dates):
+        try:
+            # parse into list
+            list_dates=dates.split(',')
+            for d in list_dates:
+                date=Date_provider_avail(provider_id=u.id,date=d)
+                db.session.add(date)
+                db.session.commit()
+            return (True,dates)
+        except Exception as e:
+            return (False, e)
+    
+    @classmethod
+    def get_dates(cls,u):
+        try:
+            # delete the ones that are before today
+            res=cls.remove_old_dates(u)
+            if res:
+                dates=Date_provider_avail.query.filter_by(provider_id=u.id).order_by(Date_provider_avail.date.asc).all()
+                return (True,dates)
+            else:
+                return (False,'Error in getting provider dates')
+            
+        except Exception as e:
+            return (False, e)
+        
+    def remove_old_dates(u):
+        try:
+            dates=Date_provider_avail.query.filter_by(provider_id=u.id).all()
+
+            # get today's date
+            # compare and if it's older, delete from db
+            today=date.today().strftime("%Y-%m-%d")
+            t=datetime.strptime(today,"%Y-%m-%d").date()
+
+            for d in dates:
+                if d.date < t:
+                    db.session.delete(d)
+                    db.session.commit()
+            return True
+        except Exception as e:
+            return False
+
 
 class Provider(db.Model):
     __tablename__='providers'
@@ -254,6 +348,7 @@ class Provider(db.Model):
     user=db.relationship('User', back_populates="provider")
     dishes=db.relationship('Dish',back_populates="provider", cascade='save-update, merge, delete')
     cuisines=db.relationship("Cuisine", secondary="cuisine_providers",back_populates="providers", cascade='save-update, merge, delete')
+    dates_provider_avail=db.relationship('Date_provider_avail',back_populates="providers", cascade='save-update, merge, delete')
     
     @classmethod
     def get_provider(cls, u):
@@ -288,9 +383,9 @@ class Provider(db.Model):
                 p.active=fp['active']
                 p.geocode_lat=geocode_lat
                 p.geocode_long=geocode_long
-                
-            else:
 
+            else:
+  
                 # they are creating a record for the first time, make a new provider
                 p=Provider(user_id=u.id,
                            name=fp['name'],
@@ -303,6 +398,7 @@ class Provider(db.Model):
                       active=fp['active'],
                 geocode_lat=geocode_lat,
                 geocode_long=geocode_long)
+
             # also need to update email in user table
             # get the user first
             u=User.query.get(u.id)

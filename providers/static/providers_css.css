@@ -23,6 +23,9 @@
     position: absolute;
     background-color: red;
     width: auto;
+}
+
+.pointer{
     cursor:pointer;
 }
 

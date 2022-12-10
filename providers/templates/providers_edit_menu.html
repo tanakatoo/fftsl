@@ -7,6 +7,7 @@
 <h3>Settings</h3>
 <form id="settingsEditForm" method="POST" action="{{url_for('providers_bp.save_settings')}}">
     {{ form_p.hidden_tag() }}
+
     <p>
         {{form_p.max_meals_per_day.label}} {{form_p.max_meals_per_day}}
     </p>
@@ -15,6 +16,58 @@
     </p>
     <p>
         {{form_p.serve_num_org_per_day.label}} {{form_p.serve_num_org_per_day}}
+    </p>
+
+    <p>
+        {%if pd%}
+        {% set a=namespace(quit = False) %}
+        {%else %}
+        {%set a=namespace(quit=True)%}
+        {%endif%}
+
+        {% for d in form_days.days %}
+
+        {% for id in pd if not a.quit %}
+        {%if id.recurring_day_id == d.data %}
+        {{d(checked=True)}}
+        {% set a.quit = True%}
+        {%endif%}
+
+        {%endfor%}
+
+        {%if (not a.quit and pd) or (a.quit and not pd)%}
+        {{d}}
+        {%endif %}
+
+        {%if pd%}
+        {%set a.quit = False%}
+        {%endif%}
+
+        {{d.label}}
+        {% endfor %}
+    </p>
+    <p>
+        Dates available
+        <input type="date" name="date" id="date">
+        <button id="addDate">Add Date</button>
+        <span class="error" id="dateError"></span>
+    </p>
+    <p>
+        Selected dates
+    <table>
+        <tbody id="datesTable" class="pointer">
+            {%for d in prov_dates%}
+            <tr>
+                <td>
+                    {{d.date}}
+                </td>
+                <td id="d{{d.date.strftime('%Y-%m-%d').replace('-','')}}">
+                    X
+                </td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
     </p>
     <button id="submit">Save settings</button>
 </form>
@@ -92,4 +145,4 @@
 </table>
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('providers_bp.static',filename='providers_js.js')}}"></script>{% endblock%}
+<script src="{{url_for('providers_bp.static',filename='edit_menu_js.js')}}"></script>{% endblock%}
