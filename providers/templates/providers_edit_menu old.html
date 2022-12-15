@@ -17,65 +17,83 @@
     <p>
         {{form_p.serve_num_org_per_day.label}} {{form_p.serve_num_org_per_day}}
     </p>
-    <fieldset>
-        <legend>Set recurring availability</legend>
+
+    <p>
+        {%if pd%}
+        {% set a=namespace(quit = False) %}
+        {%else %}
+        {%set a=namespace(quit=True)%}
+        {%endif%}
+
         {% for d in form_days.days %}
+
+        {% for id in pd if not a.quit %}
+        {%if id.recurring_day_id == d.data %}
+        {{d(checked=True)}}
+        {% set a.quit = True%}
+        {%endif%}
+
+        {%endfor%}
+
+        {%if (not a.quit and pd) or (a.quit and not pd)%}
         {{d}}
+        {%endif %}
+
+        {%if pd%}
+        {%set a.quit = False%}
+        {%endif%}
+
         {{d.label}}
         {% endfor %}
-        <p>
-            Start date: <input type="date" id="startDate">
-            End date:<input type="date" id="endDate">
-            <button id="addRecurringDate">Add Recurring Day</button>
-            <span class="error" id="recurringDateError"></span>
-        </p>
-        <p>
-        <h5>Selected recurring days</h5>
-        <table>
-            <tbody id="recurringDayTable" class="pointer">
-
-                {%for day,start,end in pd%}
-                <tr>
-                    <td>
-                        Every {{day}} {%if start%} {{start}} - {{end}} {%
-                        endif%}
-                    </td>
-                    <td
-                        id="{{day}}{%if start%}{{start.strftime('%Y-%m-%d').replace('-','')}}{%endif%}{%if end %}{{end.strftime('%Y-%m-%d').replace('-','')}}{%endif%}">
-                        X
-                    </td>
-                </tr>
-                {%endfor%}
-            </tbody>
-        </table>
-        </p>
-    </fieldset>
-    <fieldset>
-        <legend>Set specific availability</legend>
+    </p>
+    <p>
+        Start date: <input type="date" class="startDate" \>
+        End date:<input type="date" class="endDate" \>
+    </p>
+    <p>
+    <table>
+        <tbody id="recurringDayTable" class="pointer">
+            <tr>
+                <td>{{pd}}</td>
+            </tr>
+            {%for day in pd%}
+            <tr>
+                <td>
+                    Every {{day.day_of_week}} {%if day.start_date%} {{day.start_date}} - {{day.end_date}} {%
+                    endif%}
+                </td>
+                <td
+                    id="d{{day.recurring_day_id}}{%if day.start_date%}{{day.start_date.strftime('%Y-%m-%d').replace('-','')}}{%endif%}{%if day.end_date%}{{day.end_date.strftime('%Y-%m-%d').replace('-','')}}{%endif%}">
+                    X
+                </td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+    </p>
+    <p>
         Dates available
         <input type="date" name="date" id="date">
         <button id="addDate">Add Date</button>
         <span class="error" id="dateError"></span>
-
-        <h5>Selected dates</h5>
-        <table>
-            <tbody id="datesTable" class="pointer">
-
-                {%for d in prov_dates%}
-                <tr>
-                    <td>
-                        {{d.date}}
-                    </td>
-                    <td id="d{{d.date.strftime('%Y-%m-%d').replace('-','')}}">
-                        X
-                    </td>
-                </tr>
-                {%endfor%}
-            </tbody>
-        </table>
-    </fieldset>
-
-
+    </p>
+    <p>
+        Selected dates
+    <table>
+        <tbody id="datesTable" class="pointer">
+            {%for d in prov_dates%}
+            <tr>
+                <td>
+                    {{d.date}}
+                </td>
+                <td id="d{{d.date.strftime('%Y-%m-%d').replace('-','')}}">
+                    X
+                </td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+    </p>
     <button id="submit">Save settings</button>
 </form>
 <h3>Add dish</h3>

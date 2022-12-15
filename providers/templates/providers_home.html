@@ -43,8 +43,10 @@
 <section class="menu">
     <p>Saved menus</p>
     {%if m%}
+
+
+    {%for dish in m %}
     <ul>
-        {%for dish in m %}
         <li>
             Name: {{dish.name}}
         </li>
@@ -73,28 +75,30 @@
         <li>
             Passed guidelines: {%if dish.pass_guidelines %}{{p.pass_guidelines}}{% endif %}
         </li>
-        {% endfor %}
     </ul>
-    {%else%}
-    <p>No menus yet, make one soon!</p>
-    {%endif%}
-    <h3>Catering settings</h3>
-    <ul>
-        <li>
-            Number of meals you can serve at one time for one organization: {%if p.max_meals_per_day
-            %}{{p.max_meals_per_day}}{% endif %}
-        </li>
-        <li>
-            Minimum number of meals you will serve at one time for one organization: {%if p.min_meals
-            %}{{p.min_meals}}{% endif %}
-        </li>
-        <li>
-            Number of organizations you can serve in one day: {%if p.serve_num_org_per_day
-            %}{{p.serve_num_org_per_day}}{% endif %}
-        </li>
-    </ul>
-    <button {% if menuDisable=="true" %}disabled {%endif%}>
-        <a {% if not menuDisable=="true" %} href="/providers/edit_menu" {%endif%}>Edit</a></button>
+    {% endfor %}
+
+</section>
+{%else%}
+<p>No menus yet! Please fill out profile in order to make your menu!</p>
+{%endif%}
+<h3>Catering settings</h3>
+<ul>
+    <li>
+        Number of meals you can serve at one time for one organization: {%if p.max_meals_per_day
+        %}{{p.max_meals_per_day}}{% endif %}
+    </li>
+    <li>
+        Minimum number of meals you will serve at one time for one organization: {%if p.min_meals
+        %}{{p.min_meals}}{% endif %}
+    </li>
+    <li>
+        Number of organizations you can serve in one day: {%if p.serve_num_org_per_day
+        %}{{p.serve_num_org_per_day}}{% endif %}
+    </li>
+</ul>
+<button {% if menuDisable=="true" %}disabled {%endif%}>
+    <a {% if not menuDisable=="true" %} href="/providers/edit_menu" {%endif%}>Edit</a></button>
 </section>
 
 

@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% block header_area %}
-<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
-{% block title %}Provider Edit Info{% endblock %}
+<link rel="stylesheet" href="{{url_for('schools_bp.static',filename='schools_css.css')}}">{% endblock %}
+{% block title %}School Edit Info{% endblock %}
 {% block content %}
-<h1>Edit Provider Information</h1>
+<h1>Edit School Information</h1>
 
-<form action="{{url_for('providers_bp.save_info')}}" id="providerEditForm" method="POST" autocomplete="off"
+<form action="{{url_for('schools_bp.save_info')}}" id="schoolEditForm" method="POST" autocomplete="off"
     autocomplete="chrome-off">
     {{ form.hidden_tag() }}
 
@@ -29,44 +29,16 @@
         {{form.contact_name.label}}: {{form.contact_name}}
     </p>
     <p>
+        {{form.principal_name.label}}: {{form.principal_name}}
+    </p>
+    <p>
         {{form.phone.label}}: {{form.phone}}
     </p>
     <p>
         <label for="email">Email</label>
         <input type="email" name="email" value="{{email}}" />
     </p>
-    <p>
-        {{form.sales_pitch.label}}: {{form.sales_pitch}}
-    </p>
-    <p>
-        {%if pc%}
-        {% set a=namespace(quit = False) %}
-        {%else %}
-        {%set a=namespace(quit=True)%}
-        {%endif%}
 
-        {% for c in form_c.cuisines %}
-
-        {% for id in pc if not a.quit %}
-        {%if id.cuisine_id == c.data %}
-        {{c(checked=True)}}
-        {% set a.quit = True%}
-        {%endif%}
-
-        {%endfor%}
-
-        {%if (not a.quit and pc) or (a.quit and not pc)%}
-        {{c}}
-        {%endif %}
-
-        {%if pc%}
-        {%set a.quit = False%}
-        {%endif%}
-
-        {{c.label}}
-        {% endfor %}
-
-    </p>
     <p>
         {{form.active.label}}: {{form.active}}
     </p>
@@ -85,4 +57,4 @@
 
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('providers_bp.static',filename='edit_info_js.js')}}"></script>{% endblock%}
+<script src="{{url_for('schools_bp.static',filename='edit_info_js.js')}}"></script>{% endblock%}

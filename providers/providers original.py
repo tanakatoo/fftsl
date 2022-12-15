@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, g, redirect, url_for, session, flash, request
 from auth.auth import check_login, check_is_provider
-from models import Provider, Province, City, Dish, Cuisine, Cuisine_Provider, Recurring_availability, Recurring_Day, Date_avail
+from models import Provider, Province, City, Dish, Cuisine, Cuisine_Provider, Recurring_availability, Recurring_Day#, Date_avail
 from forms import ProviderInfoForm, DishInfoForm, SettingsForm, CuisineForm, DaysForm
 from util import register_new_city, set_city_choices,set_prov_choices
 # have to import the model for this here
@@ -161,18 +161,14 @@ def edit_menu():
     p=Provider.get_provider(g.user.id) #settings is in provider table
     all_days=Recurring_Day.get_all_days()
     pd=Recurring_availability.get_days(g.user.id) #all recurring availabilities with start and end dates
-    pdid=Recurring_availability.get_days_id(g.user.id)
+    #prov_dates=Date_avail.get_dates(id=g.user.id) #all specific dates related to this provider
     
-    prov_dates=Date_avail.get_dates(id=g.user.id) #all specific dates related to this provider
-    
-    if m[0] and p[0] and all_days[0] and pd[0] and pdid[0] and prov_dates[0]: # means there are no errors getting the info
+    if m[0] and p[0] and all_days[0] and pd[0]: #and prov_dates[0]: # means there are no errors getting the info
         m=m[1] #could be a list
         p=p[1]
         all_days=all_days[1]
         pd=pd[1]
-        pdid=pdid[1]
-        
-        prov_dates=prov_dates[1]
+        #prov_dates=prov_dates[1]
         form_m=DishInfoForm(active=True) 
         form_p=SettingsForm(obj=p)
         form_days=DaysForm()
@@ -187,11 +183,11 @@ def edit_menu():
             form_m.related_to_dish.choices=[("", "---")]
         
         #return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd, prov_dates=prov_dates)
-        return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd,pdid=pdid, prov_dates=prov_dates)
+        return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd)
             
     else:
-        #flash(f"Error getting data. {m[1]}, {p[1]}, {all_days[1]}, {pd[1]}", 'failure_bkg')
-        flash(f"Error getting data. m: {m[1]}, p:{p[1]}, all_days:{all_days[1]}, pd:{pd[1]}, pdid={{pdid[1]}}, prov_dates:{prov_dates[1]}", 'failure_bkg')
+        flash(f"Error getting data. {m[1]}, {p[1]}, {all_days[1]}, {pd[1]}", 'failure_bkg')
+        #flash(f"Error getting data. {m[1]}, {p[1]}, {all_days[1]}, {pd[1]}, {prov_dates[1]}", 'failure_bkg')
         return redirect('/dashboard') 
     
     
@@ -207,11 +203,9 @@ def save_settings():
     if m[0] and p[0] and all_days[0]:
         m=m[1]
         p=p[1]
-        
         all_days=all_days[1]
         form_p=SettingsForm(obj=p)
         form_days=DaysForm()
-        # maybe we don't need to set the days if we don't validate it
         days=[(d.id,d.day) for d in all_days]
         form_days.days.choices=days
         
@@ -227,22 +221,20 @@ def save_settings():
             # save provider info
             res=p.set_settings(fp=p_form)
             # save recurring availability
-            resd=Recurring_availability.set_days(id=g.user.id,fd=form_days.recurring_dates.data, user_type=g.user.user_type)
-            raise
+            resd=Recurring_availability.set_days(id=g.user.id,fd=form_days.days.data)
             # save specific dates
-            resdates=Date_avail.set_dates(id=g.user.id,dates=form_p.dates.data)
-            
-            if res[0] and resd[0] and resdates[0]:
+            #resdates=Date_avail.set_dates(id=g.user.id,dates=form_p.dates.data)
+
+            if res[0] and resd[0]: #and resdates[0]:
                 flash(f'Data saved!', 'success_bkg')
             
             else:
-                flash (f'An error occured saving settings data: {res[1]}, {resd[1]}, {resdates[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
-                #flash (f'An error occured saving settings data: {res[1]}, {resd[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
-        else:
-            flash(f'There was an error saving data: form_p: {form_p.errors}, form_days: {form_days.errors}', 'failure_bkg')
+                #flash (f'An error occured saving settings data: {res[1]}, {resd[1]}, {resdates[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
+                flash (f'An error occured saving settings data: {res[1]}, {resd[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
+            return redirect(url_for("providers_bp.edit_menu"))
     else:
         flash(f"Error getting data. {m[1]}, {p[1]}", 'failure_bkg')
-    return redirect(url_for('providers_bp.edit_menu'))
+        return redirect("/edit_menu")
 
 @providers_bp.route('/save_dish', methods=["POST"])
 @check_is_provider

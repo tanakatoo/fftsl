@@ -44,7 +44,7 @@ def add_user_to_g():
     
     if CURR_USER_KEY in session:
         g.user = User.get_user(id=session[CURR_USER_KEY])
-
+        print('*********added user**********')
     else:
         g.user = None
 

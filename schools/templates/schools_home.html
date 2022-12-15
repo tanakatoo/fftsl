@@ -5,4 +5,39 @@
 <h1>School Dashboard</h1>
 <p>Same as the provider's, this should be a place they can edit their information</p>
 
+<section class="info">
+    <h3>school info</h3>
+    <ul>
+        <li>
+            Name: {{s.name}}
+        </li>
+        <li>
+            Address: {% if s.address %}{{s.address}}{% endif %}
+        </li>
+        <li>
+            City: {{city}}
+        </li>
+        <li>
+            Province: {{province}}
+        </li>
+        <li>
+            Contact Name: {% if s.address %}{{s.contact_name}}{% endif %}
+        </li>
+        <li>
+            Principal Name: {% if s.address %}{{s.principal_name}}{% endif %}
+        </li>
+        <li>
+            Phone: {% if s.address %}{{s.phone}}{% endif %}
+        </li>
+        <li>
+            Email: {{email}}
+        </li>
+        <li>
+            Active: {{s.active}}
+        </li>
+    </ul>
+
+    <button><a href="/schools/edit_info">Edit</a></button>
+
+</section>
 {% endblock %}
