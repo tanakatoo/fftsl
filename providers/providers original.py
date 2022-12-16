@@ -221,7 +221,7 @@ def save_settings():
             # save provider info
             res=p.set_settings(fp=p_form)
             # save recurring availability
-            resd=Recurring_availability.set_days(id=g.user.id,fd=form_days.days.data)
+            resd=Recurring_availability.set_days(id=g.user.id,fd=form_days.days.data,user_type=g.user.user_type)
             # save specific dates
             #resdates=Date_avail.set_dates(id=g.user.id,dates=form_p.dates.data)
 

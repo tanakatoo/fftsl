@@ -34,14 +34,14 @@
         <table>
             <tbody id="recurringDayTable" class="pointer">
 
-                {%for day,start,end in pd%}
+                {%for day,id,start,end in pd%}
                 <tr>
-                    <td>
+                    <td data-id="{{id}}:{{start.strftime('%Y-%m-%d')}}:{{end.strftime('%Y-%m-%d')}}">
                         Every {{day}} {%if start%} {{start}} - {{end}} {%
                         endif%}
                     </td>
                     <td
-                        id="{{day}}{%if start%}{{start.strftime('%Y-%m-%d').replace('-','')}}{%endif%}{%if end %}{{end.strftime('%Y-%m-%d').replace('-','')}}{%endif%}">
+                        id="{{day}}{{start.strftime('%Y-%m-%d').replace('-','')}}{{end.strftime('%Y-%m-%d').replace('-','')}}">
                         X
                     </td>
                 </tr>

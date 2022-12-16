@@ -329,33 +329,17 @@ class Recurring_availability(db.Model):
                                 nullable=False)
     start_date=db.Column(db.Date)
     end_date=db.Column(db.Date)
-
-    @hybrid_property
-    def who_id(self):
-        return self.provider_id or self.school_id
-    
-    # @property
-    # def day_of_week(self):
-    #     return Recurring_Day.query.filter_by(id=self.user_id).first()
     
     @classmethod
     def get_days(cls,id):
         """returns day of week (not id, the word), start date and end date"""
         try:
-            d=db.session.query(Recurring_Day.day, Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).all()
+            d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).all()
             # d=Recurring_Day.query.filter_by(id=id).all()
             return (True, d)
         except Exception as e:
             return (False, e)
     
-    @classmethod
-    def get_days_id(cls,id):
-        try:
-            #d=db.session.query(Recurring_Day.day, Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).all()
-            d=Recurring_availability.query.filter_by(provider_id=id).all()
-            return (True, d)
-        except Exception as e:
-            return (False, e)
     
     @classmethod
     def set_days(cls,id,fd, user_type):
@@ -369,13 +353,22 @@ class Recurring_availability(db.Model):
             db.session.commit()
             
             # then add all the records again
-            for fid in fd:
-                if user_type=='provider':
-                    d=Recurring_availability(provider_id=id,recurring_day_id=fid)
-                else:
-                    d=Recurring_availability(school_id=id,recurring_day_id=fid)
-                db.session.add(d)
-                db.session.commit()
+            if user_type=='provider':
+                for data in fd:
+                    d=Recurring_availability(provider_id=data['provider_id'],
+                                             recurring_day_id=data['recurring_day_id'],
+                                             start_date=data['start_date'],
+                                             end_date=data['end_date'])
+                    db.session.add(d)
+                    db.session.commit()
+            else:
+                for data in fd:
+                    d=Recurring_availability(provider_id=data['provider_id'],
+                                             recurring_day_id=data['recurring_day_id'],
+                                             start_date=data['start_date'],
+                                             end_date=data['end_date'])
+                    db.session.add(d)
+                    db.session.commit()
 
             return (True, fd)
         except Exception as e:
@@ -385,7 +378,7 @@ class Recurring_availability(db.Model):
 class Date_avail(db.Model):
     __tablename__='dates_avail'
     def __repr__(self):
-        return f"<user_id={self.user_id}, date={self.date}, provider_id={self.provider_id}, school_id={self.school_id}>"
+        return f"<date={self.date}, provider_id={self.provider_id}, school_id={self.school_id}>"
 
     id=db.Column(db.Integer,
                  primary_key=True,
@@ -400,31 +393,52 @@ class Date_avail(db.Model):
     
     providers=db.relationship('Provider',back_populates="dates_avail")
     schools=db.relationship('School',back_populates="dates_avail")
-    
-    # @hybrid_property
-    # def user_id(self):
-    #     return self.school_id or self.provider_id
+
     
     @classmethod
-    def set_dates(cls,id,dates):
+    def set_dates(cls,id,add_dates, user_type):
         try:
-            # parse into list
-            list_dates=dates.split(',')
-            for d in list_dates:
-                date=Date_avail(provider_id=id,date=d)
-                db.session.add(date)
+            # remove all the dates first and then add it back
+            if user_type=='provider':
+                dates=Date_avail.query.filter_by(provider_id=id).all()
+            else:
+                dates=Date_avail.query.filter_by(school_id=id).all()
+            for d in dates:
+                db.session.delete(d)
                 db.session.commit()
+            # parse add_dates into list if more than 1 date
+            if ',' in add_dates:
+                list_dates=add_dates.split(',')
+                for d in list_dates:
+                    if user_type=='provider':
+                        d_add=Date_avail(provider_id=id,date=d)
+                    else:
+                        d_add=Date_avail(school_id=id,date=d)
+                    db.session.add(d_add)
+                    db.session.commit()
+            # if not all the dates are delete, add just one date
+            elif not add_dates == '':
+                if user_type=='provider':
+                    d=Date_avail(provider_id=id,date=add_dates)
+                else:
+                    d=Date_avail(school_id=id,date=add_dates)
+                db.session.add(d)
+                db.session.commit()
+
             return (True,dates)
         except Exception as e:
             return (False, e)
     
     @classmethod
-    def get_dates(cls,id):
+    def get_dates(cls,id, user_type):
         try:
             # delete the ones that are before today
-            res=cls.remove_old_dates(id)
+            res=cls.remove_old_dates(id, user_type)
             if res:
-                dates=Date_avail.query.filter_by(provider_id=id).all()
+                if user_type=='provider':
+                    dates=Date_avail.query.filter_by(provider_id=id).all()
+                else:
+                    dates=Date_avail.query.filter_by(school_id=id).all()
                 return (True,dates)
             else:
                 return (False,'Error in getting available dates')
@@ -432,9 +446,12 @@ class Date_avail(db.Model):
         except Exception as e:
             return (False, e)
         
-    def remove_old_dates(id):
+    def remove_old_dates(id, user_type):
         try:
-            dates=Date_avail.query.filter_by(provider_id=id).all()
+            if user_type=='provider':
+                dates=Date_avail.query.filter_by(provider_id=id).all()
+            else:
+                dates=Date_avail.query.filter_by(school_id=id).all()
 
             # get today's date
             # compare and if it's older, delete from db

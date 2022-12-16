@@ -161,16 +161,14 @@ def edit_menu():
     p=Provider.get_provider(g.user.id) #settings is in provider table
     all_days=Recurring_Day.get_all_days()
     pd=Recurring_availability.get_days(g.user.id) #all recurring availabilities with start and end dates
-    pdid=Recurring_availability.get_days_id(g.user.id)
     
-    prov_dates=Date_avail.get_dates(id=g.user.id) #all specific dates related to this provider
+    prov_dates=Date_avail.get_dates(id=g.user.id, user_type=g.user.user_type) #all specific dates related to this provider
     
-    if m[0] and p[0] and all_days[0] and pd[0] and pdid[0] and prov_dates[0]: # means there are no errors getting the info
+    if m[0] and p[0] and all_days[0] and pd[0] and prov_dates[0]: # means there are no errors getting the info
         m=m[1] #could be a list
         p=p[1]
         all_days=all_days[1]
         pd=pd[1]
-        pdid=pdid[1]
         
         prov_dates=prov_dates[1]
         form_m=DishInfoForm(active=True) 
@@ -187,7 +185,7 @@ def edit_menu():
             form_m.related_to_dish.choices=[("", "---")]
         
         #return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd, prov_dates=prov_dates)
-        return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd,pdid=pdid, prov_dates=prov_dates)
+        return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd, prov_dates=prov_dates)
             
     else:
         #flash(f"Error getting data. {m[1]}, {p[1]}, {all_days[1]}, {pd[1]}", 'failure_bkg')
@@ -211,7 +209,7 @@ def save_settings():
         all_days=all_days[1]
         form_p=SettingsForm(obj=p)
         form_days=DaysForm()
-        # maybe we don't need to set the days if we don't validate it
+
         days=[(d.id,d.day) for d in all_days]
         form_days.days.choices=days
         
@@ -227,10 +225,24 @@ def save_settings():
             # save provider info
             res=p.set_settings(fp=p_form)
             # save recurring availability
-            resd=Recurring_availability.set_days(id=g.user.id,fd=form_days.recurring_dates.data, user_type=g.user.user_type)
-            raise
+            # parse it before passing it in
+            # this what it looks like coming in4:2022-12-16:2022-12-17,6:2022-12-16:2022-12-17
+            # we need to pass it a list of [{provider_id:XX, recurring_day_id:XX, start_date:XX,end_date:xx}]
+            list_of_recurring_days=form_p.recurring_dates.data.split(',')
+            recurring_days_to_db=[]
+            # now we have 4:2022-12-16:2022-12-17
+            for d in list_of_recurring_days:
+                list_of_data=d.split(':')
+                data={'provider_id':g.user.id,
+                      'recurring_day_id': list_of_data[0],
+                      'start_date': list_of_data[1],
+                      'end_date':list_of_data[2]}
+                recurring_days_to_db.append(data)
+            
+            resd=Recurring_availability.set_days(id=g.user.id,fd=recurring_days_to_db, user_type=g.user.user_type)
             # save specific dates
-            resdates=Date_avail.set_dates(id=g.user.id,dates=form_p.dates.data)
+            
+            resdates=Date_avail.set_dates(id=g.user.id,add_dates=form_p.dates.data, user_type=g.user.user_type)
             
             if res[0] and resd[0] and resdates[0]:
                 flash(f'Data saved!', 'success_bkg')

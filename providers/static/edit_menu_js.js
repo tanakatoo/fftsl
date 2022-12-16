@@ -19,11 +19,23 @@ function setMinDate() {
     document.querySelector("#endDate").setAttribute("min", today);
 }
 
-// set event listeners on the dates so they can delete them
-function addEventListenerOnDates() {
-    datesTable = document.querySelector("#datesTable")
+function getTDs(tableName) {
+    datesTable = document.querySelector(`#${tableName}`)
     datesTD = datesTable.getElementsByTagName("td")
     datesTD = Array.from(datesTD)
+    return datesTD
+}
+
+// set event listeners on the dates so they can delete them
+function addEventListenerOnDates() {
+    datesTD = getTDs('datesTable')
+    // if the id is not empty, it is a delete button
+    datesTD.forEach(td => {
+        if (td.id != "") {
+            td.addEventListener("click", (e) => deleteDay(e))
+        }
+    })
+    datesTD = getTDs('recurringDayTable')
     // if the id is not empty, it is a delete button
     datesTD.forEach(td => {
         if (td.id != "") {
@@ -32,11 +44,41 @@ function addEventListenerOnDates() {
     })
 }
 
-// add the already saved dates so that we can add it agan
+// add the already saved dates so that we can add it again in Flask
 function addDateToHidden() {
+    // for specific dates
+    datesTD = getTDs('datesTable')
+    //add date to hidden input to be saved in db
+    document.querySelector("#dates_avail").value = ""
+    datesTD.forEach(td => {
+        // if td is empty it means it is not a delete button
+        if (td.id == "") {
+            if (document.querySelector("#dates_avail").value != '') {
+                document.querySelector("#dates_avail").value += ','
+            }
+            document.querySelector("#dates_avail").value += td.innerText
+        }
+    })
 
+    // for recurring days
+    datesTD = getTDs('recurringDayTable')
+    document.querySelector("#recurring_dates").value = ""
+    //add date to hidden input to be saved in db
+    datesTD.forEach(td => {
+        // if td is empty it means it is not a delete button
+        if (td.id == "") {
+            if (document.querySelector("#recurring_dates").value != '') {
+                document.querySelector("#recurring_dates").value += ','
+            }
+            document.querySelector("#recurring_dates").value += td.dataset.id
+        }
+    })
 }
 
+// before submitting, write the days to the hidden values
+document.querySelector("#submit").addEventListener("click", (e) => {
+    addDateToHidden()
+})
 
 // Get recurring dates
 document.querySelector("#addRecurringDate").addEventListener("click", (e) => {
@@ -77,7 +119,7 @@ document.querySelector("#addRecurringDate").addEventListener("click", (e) => {
             if (document.querySelector("#recurring_dates").value != '') {
                 document.querySelector("#recurring_dates").value += ','
             }
-            //remove the d, 2nd number is the day, next 8 is start date and 8 after that is end date
+            //2nd number is the day, next 8 is start date and 8 after that is end date
             document.querySelector("#recurring_dates").value += selectedDayId + ":" + document.querySelector("#startDate").value + ":" + document.querySelector("#endDate").value //id needs a character
 
 
@@ -139,6 +181,8 @@ document.querySelector("#datesTable").addEventListener("click", (e) => {
 
 function deleteDay(e) {
     e.target.parentElement.remove()
+    // have to remove it from the hidden field too
+
 }
 
 setMinDate()
