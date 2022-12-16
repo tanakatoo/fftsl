@@ -64,9 +64,13 @@ function addDateToHidden() {
     datesTD = getTDs('recurringDayTable')
     document.querySelector("#recurring_dates").value = ""
     //add date to hidden input to be saved in db
+    console.log(datesTD)
     datesTD.forEach(td => {
+        console.log(datesTD)
+        console.log(td)
+
         // if td is empty it means it is not a delete button
-        if (td.id == "") {
+        if (td.dataset.id) {
             if (document.querySelector("#recurring_dates").value != '') {
                 document.querySelector("#recurring_dates").value += ','
             }
@@ -99,8 +103,8 @@ document.querySelector("#addRecurringDate").addEventListener("click", (e) => {
             datesTbody = document.querySelector("#recurringDayTable")
             const row = document.createElement("tr");
             const cell = document.createElement("td");
-            const cellText = document.createTextNode("Every " + selectedDayName + " from " + document.querySelector("#startDate").value + " - " + document.querySelector("#endDate").value);
-
+            const cellText = document.createTextNode("Every " + selectedDayName + " " + document.querySelector("#startDate").value + " - " + document.querySelector("#endDate").value);
+            cell.dataset.id = selectedDayId + ":" + document.querySelector("#startDate").value + ":" + document.querySelector("#endDate").value //id needs a character
             const cellDel = document.createElement("td")
             const cellTextDel = document.createTextNode("X");
 
@@ -119,9 +123,6 @@ document.querySelector("#addRecurringDate").addEventListener("click", (e) => {
             if (document.querySelector("#recurring_dates").value != '') {
                 document.querySelector("#recurring_dates").value += ','
             }
-            //2nd number is the day, next 8 is start date and 8 after that is end date
-            document.querySelector("#recurring_dates").value += selectedDayId + ":" + document.querySelector("#startDate").value + ":" + document.querySelector("#endDate").value //id needs a character
-
 
         } else {
             document.querySelector("#recurringDateError").innerText = "Date already added"
@@ -157,13 +158,6 @@ document.querySelector("#addDate").addEventListener("click", (e) => {
 
         //make X clickable to delete
         document.querySelector(`#d${document.querySelector("#date").value.replaceAll('-', '')}`).addEventListener("click", (e) => deleteDay(e))
-
-        //add date to hidden input to be saved in db
-        if (document.querySelector("#dates_avail").value != '') {
-            document.querySelector("#dates_avail").value += ','
-        }
-        document.querySelector("#dates_avail").value += document.querySelector("#date").value
-
 
     } else if (document.querySelector(`#${'d' + document.querySelector("#date").value.replaceAll('-', '')}`)) {
         document.querySelector("#dateError").innerText = "Date already added"

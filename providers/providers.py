@@ -229,15 +229,17 @@ def save_settings():
             # this what it looks like coming in4:2022-12-16:2022-12-17,6:2022-12-16:2022-12-17
             # we need to pass it a list of [{provider_id:XX, recurring_day_id:XX, start_date:XX,end_date:xx}]
             list_of_recurring_days=form_p.recurring_dates.data.split(',')
+            
             recurring_days_to_db=[]
             # now we have 4:2022-12-16:2022-12-17
             for d in list_of_recurring_days:
-                list_of_data=d.split(':')
-                data={'provider_id':g.user.id,
-                      'recurring_day_id': list_of_data[0],
-                      'start_date': list_of_data[1],
-                      'end_date':list_of_data[2]}
-                recurring_days_to_db.append(data)
+                if not d == "":
+                    list_of_data=d.split(':')
+                    data={'provider_id':g.user.id,
+                        'recurring_day_id': list_of_data[0],
+                        'start_date': list_of_data[1],
+                        'end_date':list_of_data[2]}
+                    recurring_days_to_db.append(data)
             
             resd=Recurring_availability.set_days(id=g.user.id,fd=recurring_days_to_db, user_type=g.user.user_type)
             # save specific dates
