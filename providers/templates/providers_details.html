@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
+{% block title %}Provider Details{% endblock %}
+{% block content %}
+<h1>Provider Details</h1>
+
+
+<p>
+    Active: {{p.active}}
+</p>
+<p>
+    Name: {{p.name}}
+</p>
+<p>Address: {{p.address}}
+
+</p>
+<p>
+    City: {{p.city_id}}
+</p>
+<p>
+    Province: {{p.province_id}}
+</p>
+<p>
+    Contact Name: {{p.contact_name}}
+</p>
+<p>
+    Phone: {{p.phone}}
+</p>
+<p>
+    <label for="email">Email</label>
+    <input type="email" name="email" value="{{email}}" />
+</p>
+<p>
+    Sales pitch: {{p.sales_pitch}}
+</p>
+<p>
+
+    {% for c in form_c.cuisines %}
+    {{c(disabled=True)}}
+    {{c.label}}
+    {% endfor %}
+
+</p>
+<fieldset>
+    <legend>
+        Delivery settings settings
+    </legend>
+    <p>
+        Max number of meals per day to serve: {{p.max_meals_per_day}}
+    </p>
+    <p>
+        Min number of meals per day: {{p.min_meals}}
+    </p>
+    <p>
+        Number of organizations to serve per day: {{p.serve_num_org_per_day}}
+    </p>
+</fieldset>
+
+<p>Recurring availability</p>
+
+<table>
+    <tbody id="recurringDayTable" class="pointer">
+
+        {%for day,id,start,end in pd%}
+        <tr>
+            <td data-id="{{id}}:{{start.strftime('%Y-%m-%d')}}:{{end.strftime('%Y-%m-%d')}}">
+                Every {{day}} {%if start%} {{start}} - {{end}} {%
+                endif%}
+            </td>
+        </tr>
+        {%endfor%}
+    </tbody>
+</table>
+</p>
+
+<p>Set specific availability</p>
+
+<table>
+    <tbody id="datesTable" class="pointer">
+
+        {%for d in prov_dates%}
+        <tr>
+            <td>
+                {{d.date}}
+            </td>
+        </tr>
+        {%endfor%}
+    </tbody>
+</table>
+
+
+<button><a href="{{url_for('providers_bp.edit_info')}}">Edit</a></button>
+</form>
+
+
+{% endblock %}
+{% block scripts%}
+{% endblock%}

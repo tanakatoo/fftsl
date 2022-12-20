@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import DateField, widgets, SelectMultipleField, SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField, HiddenField
+from wtforms import FormField, DateField, widgets, SelectMultipleField, SelectField,StringField, EmailField, PasswordField, RadioField, TextAreaField, IntegerField, BooleanField, DecimalField, HiddenField
 from wtforms.validators import InputRequired, Email, Length, NumberRange, Optional
 
 class PasswordResetForm(FlaskForm):
@@ -25,11 +25,21 @@ class ProviderInfoForm(FlaskForm):
     province_id=SelectField("Province", coerce=int, validate_choice=False)
     contact_name=StringField("Contact Name")
     phone=StringField("Phone Number")
-    sales_pitch=TextAreaField("Sales pitch:")
+    sales_pitch=TextAreaField("Sales pitch")
     active=BooleanField("Account active", default=True)
-    geocode_lat=HiddenField(id="geolat")
-    geocode_long=HiddenField(id="geolong")
+    geocode_lat=StringField("Latitude",id="geolat", validators=[Optional()])
+    geocode_long=StringField("Longtitude", id="geolong", validators=[Optional()])
     
+    max_meals_per_day=StringField("Maximum number of meals you can provide at one time to one organization")
+    min_meals=StringField("Minimum number of meals you will provide to one organization")
+    serve_num_org_per_day=StringField("How many organizations can you serve per day?")
+    dates=HiddenField(id="dates_avail")
+    recurring_dates=HiddenField(id="recurring_dates")
+    # @classmethod
+    # def add_cuisines_fields(cls, cform):
+    #     cls.cuisines = FormField(cform)
+    # geocode_lat=HiddenField(id="geolat")
+    # geocode_long=HiddenField(id="geolong")
 
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
@@ -38,6 +48,9 @@ class MultiCheckboxField(SelectMultipleField):
     
 class CuisineForm(FlaskForm):
     cuisines = MultiCheckboxField('Cuisine', coerce=int, validate_choice=False)
+
+class RestrictionForm(FlaskForm):
+    restrictions=MultiCheckboxField('Restriction', coerce=int, validate_choice=False)
 
 class DaysForm(FlaskForm):
     days = RadioField('Available every', coerce=int, validate_choice=False)
@@ -54,13 +67,7 @@ class DishInfoForm(FlaskForm):
     related_to_dish=SelectField("Related to dish")
     active=BooleanField("Active")
     
-class SettingsForm(FlaskForm):
-    max_meals_per_day=StringField("Maximum number of meals you can provide at one time to one organization")
-    min_meals=StringField("Minimum number of meals you will provide to one organization")
-    serve_num_org_per_day=StringField("How many organizations can you serve per day?")
-    dates=HiddenField(id="dates_avail")
-    recurring_dates=HiddenField(id="recurring_dates")
-    
+  
 class SchoolInfoForm(FlaskForm):
     name=StringField("Name of School", validators=[InputRequired()])
     address=StringField("Address", id="address")
@@ -70,6 +77,8 @@ class SchoolInfoForm(FlaskForm):
     contact_name=StringField("Contact Name")
     phone=StringField("Phone Number")
     active=BooleanField("Account active", default=True)
-    geocode_lat=HiddenField(id="geolat")
-    geocode_long=HiddenField(id="geolong")
+    geocode_lat=StringField("Latitude",id="geolat", validators=[Optional()])
+    geocode_long=StringField("Longtitude", id="geolong", validators=[Optional()])
     
+    dates=HiddenField(id="dates_avail")
+    recurring_dates=HiddenField(id="recurring_dates")

@@ -8,7 +8,7 @@
     <h3>company info</h3>
     <ul>
         <li>
-            Name: {{p.name}}
+            Name: <a href="{{url_for('providers_bp.info_details')}}">{{p.name}}</a>
         </li>
         <li>
             Address: {{p.address}}
@@ -32,14 +32,35 @@
             Sales pitch: {{p.sales_pitch}}
         </li>
         <li>
+            ADD RECURRING DATES, SPECIFIC DATES HERE??
+        </li>
+        <li>
             Active: {{p.active}}
         </li>
     </ul>
+    <fieldset>
+        <legend>
+            Catering settings
+        </legend>
 
-    <button><a href="/providers/edit_info">Edit</a></button>
+        <ul>
+            <li>
+                Number of meals you can serve at one time for one organization: {%if p.max_meals_per_day
+                %}{{p.max_meals_per_day}}{% endif %}
+            </li>
+            <li>
+                Minimum number of meals you will serve at one time for one organization: {%if p.min_meals
+                %}{{p.min_meals}}{% endif %}
+            </li>
+            <li>
+                Number of organizations you can serve in one day: {%if p.serve_num_org_per_day
+                %}{{p.serve_num_org_per_day}}{% endif %}
+            </li>
+        </ul>
+    </fieldset>
 
+    <button><a href="{{url_for('providers_bp.edit_info')}}">Edit</a></button>
 </section>
-
 <section class="menu">
     <p>Saved menus</p>
     {%if m%}
@@ -48,7 +69,7 @@
     {%for dish in m %}
     <ul>
         <li>
-            Name: {{dish.name}}
+            Name: <a href="{{url_for('providers_bp.view_dish',id=dish.id)}}">{{dish.name}}</a>
         </li>
 
         <li>
@@ -75,30 +96,19 @@
         <li>
             Passed guidelines: {%if dish.pass_guidelines %}{{p.pass_guidelines}}{% endif %}
         </li>
+        <li>
+            <button><a href="{{url_for('providers_bp.edit_dish',id=dish.id)}}">Edit</a></button>
+        </li>
     </ul>
     {% endfor %}
+    <button {% if menuDisable=="true" %}disabled {%endif%}>
+        <a {% if not menuDisable=="true" %} href="/providers/add_dish" {%endif%}>Add Dish</a></button>
 
-</section>
-{%else%}
-<p>No menus yet! Please fill out profile in order to make your menu!</p>
-{%endif%}
-<h3>Catering settings</h3>
-<ul>
-    <li>
-        Number of meals you can serve at one time for one organization: {%if p.max_meals_per_day
-        %}{{p.max_meals_per_day}}{% endif %}
-    </li>
-    <li>
-        Minimum number of meals you will serve at one time for one organization: {%if p.min_meals
-        %}{{p.min_meals}}{% endif %}
-    </li>
-    <li>
-        Number of organizations you can serve in one day: {%if p.serve_num_org_per_day
-        %}{{p.serve_num_org_per_day}}{% endif %}
-    </li>
-</ul>
-<button {% if menuDisable=="true" %}disabled {%endif%}>
-    <a {% if not menuDisable=="true" %} href="/providers/edit_menu" {%endif%}>Edit</a></button>
+    {%else%}
+    <p>No menus yet! Please fill out profile in order to make your menu!</p>
+    {%endif%}
+
+
 </section>
 
 

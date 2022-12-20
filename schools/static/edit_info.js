@@ -143,6 +143,7 @@ function completeAddress(id, showAddresses) {
         }
     }
     if (!selected) {
+        console.log('city not in db')
         // means not in db, have to add it
         let newOption = new Option(showAddresses[id].city, citySelect.options.length + 1)
         citySelect.add(newOption)
@@ -155,7 +156,8 @@ function completeAddress(id, showAddresses) {
         hidden.name = "newCity"
         hidden.dataset.id = citySelect.selectedIndex // this is to be able to select this option to delete it from the select dropdown if required
         hidden.value = citySelect.options[citySelect.selectedIndex].text
-        document.querySelector("#providerEditForm").append(hidden)
+        document.querySelector("#schoolEditForm").append(hidden)
+        console.log('should be created newcity')
 
     }
     // do the same for province if this is used outside Ontario

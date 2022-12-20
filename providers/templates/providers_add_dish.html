@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
+{% block title %}Provider Add Menu{% endblock %}
+{% block content %}
+<h1>Add Menu Information</h1>
+
+<h3>Add dish</h3>
+<form id="menuEditForm" method="POST" action="{{url_for('providers_bp.add_dish')}}">
+    {{ form_m.hidden_tag() }}
+
+    <p>
+        {{form_m.name.label}} {{form_m.name}}
+    </p>
+    <p>
+        {{form_m.recipe.label}} {{form_m.recipe}}
+
+    </p>
+    <p>
+        {{form_m.num_servings.label}} {{form_m.num_servings}}
+    </p>
+    <p>
+        {{form_m.ingred_disp.label}} {{form_m.ingred_disp}}
+    </p>
+    <p>
+        {{form_m.price.label}} {{form_m.price}}
+    </p>
+
+    <p>
+        {{form_m.sales_pitch.label}}: {{form_m.sales_pitch}}
+    </p>
+    <p>
+        {{form_m.max_meals.label}}{{form_m.max_meals}}
+    </p>
+    <p>
+        {{form_m.related_to_dish.label}}: {{form_m.related_to_dish}}
+    </p>
+    <p>
+        {{form_m.pass_guidelines.label}}: {{form_m.pass_guidelines}}
+    </p>
+    <section>
+        <fieldset>
+            <legend>Allergens</legend>
+            <p>Dish contains the following:</p>
+            {% for r in form_restrict.restrictions %}
+            {{r}}
+            {{r.label}}
+            {% endfor %}
+        </fieldset>
+    </section>
+    <p>
+        {{form_m.active.label}}: {{form_m.active}}
+    </p>
+    <ul>
+        {% for field in form_m %}
+        {% for error in field.error %}
+
+        <li>{{ error }}</li>
+        {%endfor%}
+    </ul>
+    {% endfor %}
+
+
+    <button id="submit">Save</button>
+</form>
+{% endblock %}
+{% block scripts%}
+{% endblock%}

@@ -12,13 +12,15 @@
     <p>
         {{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
     </p>
-    <p><span>Please select from autocomplete. This will ensure our search feature will work. </span><br>
+    <p><span>Please select from autocomplete. This will place you on the map for providers to search. </span><br>
         {{form.address.label}}:
     <div class="typedAddress">{{form.address}}
         <div class="autoAddress pointer">
         </div>
     </div>
     </p>
+    <p>{{form.geocode_lat.label}}: {{form.geocode_lat}}</p>
+    <p>{{form.geocode_long.label}}: {{form.geocode_long}}</p>
     <p>
         {{form.city_id.label}}: {{form.city_id}}
     </p>
@@ -39,6 +41,75 @@
         <input type="email" name="email" value="{{email}}" />
     </p>
 
+    <section>
+        <fieldset>
+            <legend>Set recurring availability</legend>
+            {% for d in form_days.days %}
+            {{d}}
+            {{d.label}}
+            {% endfor %}
+            <p>
+                Start date: <input type="date" id="startDate">
+                End date:<input type="date" id="endDate">
+                <button id="addRecurringDate">Add Recurring Day</button>
+                <span class="error" id="recurringDateError"></span>
+            </p>
+            <p>
+            <h5>Selected recurring days</h5>
+            <table>
+                <tbody id="recurringDayTable" class="pointer">
+
+                    {%for day,id,start,end in pd%}
+                    <tr>
+                        <td data-id="{{id}}:{{start.strftime('%Y-%m-%d')}}:{{end.strftime('%Y-%m-%d')}}">
+                            Every {{day}} {%if start%} {{start}} - {{end}} {%
+                            endif%}
+                        </td>
+                        <td
+                            id="{{day}}{{start.strftime('%Y-%m-%d').replace('-','')}}{{end.strftime('%Y-%m-%d').replace('-','')}}">
+                            X
+                        </td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+            </p>
+        </fieldset>
+        <fieldset>
+            <legend>Set specific availability</legend>
+            Dates available
+            <input type="date" name="date" id="date">
+            <button id="addDate">Add Date</button>
+            <span class="error" id="dateError"></span>
+
+            <h5>Selected dates</h5>
+            <table>
+                <tbody id="datesTable" class="pointer">
+
+                    {%for d in prov_dates%}
+                    <tr>
+                        <td>
+                            {{d.date}}
+                        </td>
+                        <td id="d{{d.date.strftime('%Y-%m-%d').replace('-','')}}">
+                            X
+                        </td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </fieldset>
+    </section>
+    <section>
+        <fieldset>
+            <legend>School rules</legend>
+            <p>Lunches must not contain any of the following:</p>
+            {% for r in form_restrict.restrictions %}
+            {{r}}
+            {{r.label}}
+            {% endfor %}
+        </fieldset>
+    </section>
     <p>
         {{form.active.label}}: {{form.active}}
     </p>
@@ -57,4 +128,5 @@
 
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('schools_bp.static',filename='edit_info_js.js')}}"></script>{% endblock%}
+<script src="{{url_for('schools_bp.static',filename='edit_avail.js')}}"></script>
+<script src="{{url_for('schools_bp.static',filename='edit_info.js')}}"></script>{% endblock%}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
+{% block title %}View details of dish{% endblock %}
+{% block content %}
+<h1>Single Dish Information</h1>
+
+<p>
+    Name: {{d.name}}
+</p>
+<p>
+    Recipe: {{d.recipe}}
+
+</p>
+<p>
+    Servings: {{d.num_servings}}
+</p>
+<p>
+    Ingredients to display: {{d.ingred_disp}}
+</p>
+<p>
+    Price: {{d.price}}
+</p>
+
+<p>
+    Sales pitch: {{d.sales_pitch}}
+</p>
+<p>
+    Max meals: {{d.max_meals}}
+</p>
+<p>
+    Dish related to: {{d.related_to_dish}}
+</p>
+<p>
+    Guidelines passed: {{d.pass_guidelines}}
+</p>
+<section>
+    <fieldset>
+        <legend>Allergens</legend>
+        <p>Dish contains the following:</p>
+        {% for r in form_restrict.restrictions %}
+        {{r(disabled=True)}}
+        {{r.label}}
+        {% endfor %}
+    </fieldset>
+</section>
+<p>
+    Active: {{d.active}}
+</p>
+
+
+
+<button><a href="{{url_for('providers_bp.edit_dish', id=d.id)}}">Edit</a></button>
+</form>
+
+{% endblock %}
+{% block scripts%}
+<script src="{{url_for('providers_bp.static',filename='edit_avail.js')}}"></script>{% endblock%}

@@ -210,10 +210,9 @@ class School(db.Model):
     recurring_days=db.relationship("Recurring_Day",
                                    secondaryjoin="Recurring_availability.recurring_day_id == Recurring_Day.id",
                                    secondary="recurring_availabilities",back_populates="schools", cascade='save-update, merge, delete')
-    # recurring_days=db.relationship("Recurring_Day", primaryjoin="User.id == Recurring_availability.user_id",
-    #                                secondaryjoin="Recurring_availability.recurring_day_id == Recurring_Day.id",
-    #                                secondary="recurring_availabilities",back_populates="schools", cascade='save-update, merge, delete')
-     
+    restrictions=db.relationship("Restriction", secondaryjoin="Restriction_School.restriction_id == Restriction.id",
+                                 secondary="restrictions_schools",back_populates="schools", cascade='save-update, merge, delete')
+    
     @classmethod
     def register(cls,name, user_id):
         s=cls(name=name, user_id=user_id)
@@ -238,6 +237,7 @@ class School(db.Model):
     def set_school(cls, fs, id, s):
         
         try:
+
            # change geocode to null if it is empty string
             if fs['geocode_lat']=='':
                 geocode_lat=None
@@ -284,14 +284,6 @@ class Recurring_Day(db.Model):
                    nullable=False, 
                    unique=True)
     
-    # providers=db.relationship("Provider", 
-    #                           primaryjoin="Recurring_Day.id == Recurring_availability.recurring_day_id",
-    #                                secondaryjoin="Recurring_availability.user_id == User.id",
-    #                                secondary="recurring_availabilities",back_populates="recurring_days")
-    # schools=db.relationship("School", 
-    #                         primaryjoin="Recurring_Day.id == Recurring_availability.recurring_day_id",
-    #                         secondaryjoin="Recurring_availability.user_id == User.id",
-    #                         secondary="recurring_availabilities",back_populates="recurring_days")
     providers=db.relationship("Provider", 
                                    secondaryjoin="Recurring_availability.provider_id == Provider.user_id",
                                    secondary="recurring_availabilities",back_populates="recurring_days")
@@ -311,7 +303,8 @@ class Recurring_Day(db.Model):
 class Recurring_availability(db.Model):
     __tablename__='recurring_availabilities'
     def __repr__(self):
-        return f"""<user_id={self.user_id}, 
+        return f"""provider_id={self.provider_id},
+            school_id={self.school_id},
             recurring_day_id={self.recurring_day_id},
             start_date={self.start_date},
             end_date={self.end_date}>"""
@@ -331,10 +324,13 @@ class Recurring_availability(db.Model):
     end_date=db.Column(db.Date)
     
     @classmethod
-    def get_days(cls,id):
+    def get_days(cls,id, user_type):
         """returns day of week (not id, the word), start date and end date"""
         try:
-            d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).all()
+            if user_type=='provider':
+                d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).all()
+            else:
+                d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.school_id==id).all()
             # d=Recurring_Day.query.filter_by(id=id).all()
             return (True, d)
         except Exception as e:
@@ -343,7 +339,7 @@ class Recurring_availability(db.Model):
     
     @classmethod
     def set_days(cls,id,fd, user_type):
-        try:
+        # try:
             # fd is list of the days IDs
             # delete all the records associated with user first
             if user_type=='provider':
@@ -363,7 +359,7 @@ class Recurring_availability(db.Model):
                     db.session.commit()
             else:
                 for data in fd:
-                    d=Recurring_availability(provider_id=data['provider_id'],
+                    d=Recurring_availability(school_id=data['school_id'],
                                              recurring_day_id=data['recurring_day_id'],
                                              start_date=data['start_date'],
                                              end_date=data['end_date'])
@@ -371,9 +367,9 @@ class Recurring_availability(db.Model):
                     db.session.commit()
 
             return (True, fd)
-        except Exception as e:
-            db.session.rollback()
-            return (False, e)
+        # except Exception as e:
+        #     db.session.rollback()
+        #     return (False, e)
 
 class Date_avail(db.Model):
     __tablename__='dates_avail'
@@ -472,6 +468,7 @@ class Provider(db.Model):
     
     def __repr__(self):
         return f"""<id={self.user_id}, name={self.name}, 
+            website={self.website},
             address={self.address},
             city_id={self.city_id},
             province_id={self.province_id},
@@ -492,6 +489,7 @@ class Provider(db.Model):
     name=db.Column(db.String(200),
                    nullable=False, 
                    unique=True)
+    website=db.Column(db.String(300))
     address=db.Column(db.Text)
     city_id=db.Column(db.Integer,
                       db.ForeignKey('cities.id'))
@@ -514,14 +512,11 @@ class Provider(db.Model):
     recurring_days=db.relationship("Recurring_Day",
                                    secondaryjoin="Recurring_availability.recurring_day_id == Recurring_Day.id",
                                    secondary="recurring_availabilities",back_populates="providers", cascade='save-update, merge, delete')
-    # recurring_days=db.relationship("Recurring_Day", 
-    #                                primaryjoin="User.id == Recurring_availability.user_id",
-    #                                secondaryjoin="Recurring_availability.recurring_day_id == Recurring_Day.id",
-    #                                secondary="recurring_availabilities",back_populates="providers", cascade='save-update, merge, delete')
     user=db.relationship('User', back_populates="provider")
     dishes=db.relationship('Dish',back_populates="provider", cascade='save-update, merge, delete')
     cuisines=db.relationship("Cuisine", secondary="cuisine_providers",back_populates="providers", cascade='save-update, merge, delete')
     dates_avail=db.relationship('Date_avail',back_populates="providers", cascade='save-update, merge, delete')
+    
     
     @classmethod
     def get_provider(cls, id):
@@ -534,17 +529,18 @@ class Provider(db.Model):
    
     @classmethod
     def set_provider(cls, fp, id,p=None):
-        try:
+            
+        # try:
              # change geocode to null if it is empty string
-            if fp['geocode_lat']=='':
+            if fp['geocode_lat']=='' or fp['geocode_lat'] is None:
                 geocode_lat=None
             else:
                 geocode_lat=Decimal(fp['geocode_lat'])
-            if fp['geocode_long']=='':
+            if fp['geocode_long']=='' or fp['geocode_lat'] is None:
                 geocode_long=None
             else:
                 geocode_long=Decimal(fp['geocode_long'])
-                       
+            
             if p:
                 # there is data, so they are updating
                 p.name=fp['name']
@@ -557,21 +553,29 @@ class Provider(db.Model):
                 p.active=fp['active']
                 p.geocode_lat=geocode_lat
                 p.geocode_long=geocode_long
+                p.max_meals_per_day=fp['max_meals_per_day']
+                p.min_meals=fp['min_meals']
+                p.serve_num_org_per_day=fp['serve_num_org_per_day']
+            
 
             else:
   
                 # they are creating a record for the first time, make a new provider
                 p=Provider(user_id=id,
                            name=fp['name'],
-                      address=fp['address'],
-                      city_id=fp['city_id'],
-                      province_id=fp['province_id'],
-                      contact_name=fp['contact_name'],
-                      phone=fp['phone'],
-                      sales_pitch=fp['sales_pitch'],
-                      active=fp['active'],
-                geocode_lat=geocode_lat,
-                geocode_long=geocode_long)
+                        address=fp['address'],
+                        city_id=fp['city_id'],
+                        province_id=fp['province_id'],
+                        contact_name=fp['contact_name'],
+                        phone=fp['phone'],
+                        sales_pitch=fp['sales_pitch'],
+                        active=fp['active'],
+                        geocode_lat=geocode_lat,
+                        geocode_long=geocode_long,
+                        max_meals_per_day=fp['max_meals_per_day'],
+                        min_meals=fp['min_meals'],
+                        serve_num_org_per_day=fp['serve_num_org_per_day']
+            )
 
             # also need to update email in user table
             # get the user first
@@ -582,9 +586,9 @@ class Provider(db.Model):
             db.session.add(p)
             db.session.commit()
             return (True, p)
-        except Exception as e:
-            db.session.rollback()
-            return (False,e)
+        # except Exception as e:
+        #     db.session.rollback()
+        #     return (False,e)
 
     def set_settings(self,fp):
         try:
@@ -642,6 +646,8 @@ class Dish(db.Model):
                      default=True)
     
     provider=db.relationship("Provider", back_populates="dishes")
+    restrictions=db.relationship("Restriction", secondaryjoin="Restriction_Dish.restriction_id == Restriction.id",
+                                 secondary="restrictions_dishes",back_populates="dishes", cascade='save-update, merge, delete')
     
     @classmethod
     def get_menu(cls,id):
@@ -658,9 +664,49 @@ class Dish(db.Model):
             return (True,d)
         except Exception as e:
             return (False,e)
+    
+    
+    def update_dish(self,fd):
+        """update an existing dish"""
+        
+        if fd['related_to_dish']=='':
+            related_to_dish=None
+        else:
+            related_to_dish=int(fd['related_to_dish'])
+        if fd['num_servings']=='' or fd['num_servings'] is None:
+            num_servings=None
+        else:
+            num_servings=int(fd['num_servings'])
+        if fd['price']=='' or fd['price'] is None:
+            price=None
+        else:
+            price=Decimal(fd['price'])
+        if fd['max_meals']=='' or fd['max_meals'] is None:
+            max_meals=None
+        else:
+            max_meals=int(fd['max_meals'])
+        
+        # try:
+        self.name=fd['name']
+        self.recipe=fd['recipe']
+        self.num_servings=num_servings
+        self.ingred_disp=fd['ingred_disp']
+        self.price=price
+        self.sales_pitch=fd['sales_pitch']
+        self.max_meals=max_meals
+        self.related_to_dish=related_to_dish
+        self.pass_guidelines=fd['pass_guidelines']
+        self.active=fd['active']
+        
+        db.session.add(self)
+        db.session.commit()
+        return (True, self)
+        # except Exception as e:
+        #     db.session.rollback()
+        #     return (False,e)
         
     @classmethod
-    def set_dish(cls, fd):
+    def insert_dish(cls, fd):
         """make a record of a new dish"""
 
         if fd['related_to_dish']=='':
@@ -771,3 +817,108 @@ class Cuisine_Provider(db.Model):
         except Exception as e:
             db.session.rollback()
             return (False, e)
+
+class Restriction(db.Model):
+    __tablename__='restrictions'
+    
+    def __repr__(self):
+        return f"<id={self.id}, name={self.name}>"
+
+    id= db.Column(db.Integer,
+                        autoincrement=True,
+                        primary_key=True)
+    name=db.Column(db.String(200),
+                    nullable=False)
+    
+    dishes=db.relationship("Dish", secondary="restrictions_dishes",back_populates="restrictions")
+    schools=db.relationship("School", secondary="restrictions_schools",back_populates="restrictions")
+    
+    @classmethod
+    def get_restriction_name(cls,id):
+        try:
+            r=cls.query.filter_by(id=id).first()
+            return (True, r)
+        except Exception as e:
+            return (False, e)
+        
+    @classmethod
+    def get_all_restrict(cls):
+        try:
+            r=cls.query.all()
+            return (True, r)
+        except Exception as e:
+            return (False, e)
+    
+        
+class Restriction_Dish(db.Model):
+    __tablename__='restrictions_dishes'
+    
+    dish_id= db.Column(db.Integer,
+                        db.ForeignKey('dishes.id'),
+                        primary_key=True)
+    restriction_id= db.Column(db.Integer,
+                            db.ForeignKey('restrictions.id'),
+                            primary_key=True)
+    
+    @classmethod
+    def get_restrictions(cls,id):
+        try:
+            r=cls.query.filter_by(dish_id=id).all()
+            return (True, r)
+        except Exception as e:
+            return (False, e)
+    
+    
+    def set_restrictions(cls,id,fr):
+        # try:
+            # fc is list of the restriction IDs
+            # delete all the records associated with user first
+            cls.query.filter_by(dish_id=id).delete()
+            db.session.commit()
+            # then add all the records again
+            for fid in fr:
+                r=Restriction_Dish(dish_id=id,restriction_id=fid)
+                db.session.add(r)
+                db.session.commit()
+
+            return (True, fr)
+        # except Exception as e:
+        #     db.session.rollback()
+        #     return (False, e)
+
+
+class Restriction_School(db.Model):
+    __tablename__='restrictions_schools'
+    
+    school_id= db.Column(db.Integer,
+                        db.ForeignKey('schools.user_id'),
+                        primary_key=True)
+    restriction_id= db.Column(db.Integer,
+                            db.ForeignKey('restrictions.id'),
+                            primary_key=True)
+    
+    @classmethod
+    def get_restrictions(cls,id):
+        try:
+            r=cls.query.filter_by(school_id=id).all()
+            return (True, r)
+        except Exception as e:
+            return (False, e)
+    
+    @classmethod
+    def set_restrictions(cls,id,fr):
+        # try:
+            # fc is list of the restriction IDs
+            # delete all the records associated with user first
+            cls.query.filter_by(school_id=id).delete()
+            db.session.commit()
+            # then add all the records again
+            for fid in fr:
+                r=Restriction_School(school_id=id,restriction_id=fid)
+                db.session.add(r)
+                db.session.commit()
+
+            return (True, fr)
+        # except Exception as e:
+        #     db.session.rollback()
+        #     return (False, e)
