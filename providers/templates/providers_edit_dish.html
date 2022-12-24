@@ -13,6 +13,12 @@
         {{form.name.label}} {{form.name}}
     </p>
     <p>
+        {% for c in form_cat.categories %}
+        {{c}}
+        {{c.label}}
+        {% endfor %}
+    </p>
+    <p>
         {{form.recipe.label}} {{form.recipe}}
 
     </p>
@@ -64,6 +70,11 @@
     <button id="submit">Save</button>
 </form>
 
+<form action="{{url_for('providers_bp.delete_dish', id=id)}}" method="POST">
+    {{ form.hidden_tag() }}
+    <button>Delete</button>
+</form>
+
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('providers_bp.static',filename='edit_avail.js')}}"></script>{% endblock%}
+{% endblock%}

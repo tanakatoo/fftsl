@@ -6,8 +6,8 @@ class PasswordResetForm(FlaskForm):
     email=EmailField("Email", validators=[InputRequired(), Email()])
 
 class PasswordSetForm(FlaskForm):
-    password=PasswordField("New Password", validators=[InputRequired(),Length(min=8)])
-    password_again=PasswordField("Please input password again", validators=[InputRequired(),Length(min=8)])
+    password=PasswordField("New Password", id="password",validators=[InputRequired(),Length(min=8)])
+    password_again=PasswordField("Please input password again", id="passwordConfirm",validators=[InputRequired(),Length(min=8)])
     
 class UserRegisterForm(FlaskForm):
     email=EmailField("Email", validators=[InputRequired(), Email()],id="email")
@@ -54,6 +54,9 @@ class RestrictionForm(FlaskForm):
 
 class DaysForm(FlaskForm):
     days = RadioField('Available every', coerce=int, validate_choice=False)
+    
+class CategoryForm(FlaskForm):
+    categories = RadioField('Category', coerce=int, validate_choice=False)
     
 class DishInfoForm(FlaskForm):
     name=StringField("Name of dish", validators=[InputRequired()])

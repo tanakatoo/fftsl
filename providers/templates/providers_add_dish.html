@@ -7,36 +7,36 @@
 
 <h3>Add dish</h3>
 <form id="menuEditForm" method="POST" action="{{url_for('providers_bp.add_dish')}}">
-    {{ form_m.hidden_tag() }}
+    {{ form_d.hidden_tag() }}
 
     <p>
-        {{form_m.name.label}} {{form_m.name}}
+        {{form_d.name.label}} {{form_d.name}}
     </p>
     <p>
-        {{form_m.recipe.label}} {{form_m.recipe}}
+        {{form_d.recipe.label}} {{form_d.recipe}}
 
     </p>
     <p>
-        {{form_m.num_servings.label}} {{form_m.num_servings}}
+        {{form_d.num_servings.label}} {{form_d.num_servings}}
     </p>
     <p>
-        {{form_m.ingred_disp.label}} {{form_m.ingred_disp}}
+        {{form_d.ingred_disp.label}} {{form_d.ingred_disp}}
     </p>
     <p>
-        {{form_m.price.label}} {{form_m.price}}
+        {{form_d.price.label}} {{form_d.price}}
     </p>
 
     <p>
-        {{form_m.sales_pitch.label}}: {{form_m.sales_pitch}}
+        {{form_d.sales_pitch.label}}: {{form_d.sales_pitch}}
     </p>
     <p>
-        {{form_m.max_meals.label}}{{form_m.max_meals}}
+        {{form_d.max_meals.label}}{{form_d.max_meals}}
     </p>
     <p>
-        {{form_m.related_to_dish.label}}: {{form_m.related_to_dish}}
+        {{form_d.related_to_dish.label}}: {{form_d.related_to_dish}}
     </p>
     <p>
-        {{form_m.pass_guidelines.label}}: {{form_m.pass_guidelines}}
+        {{form_d.pass_guidelines.label}}: {{form_d.pass_guidelines}}
     </p>
     <section>
         <fieldset>
@@ -49,10 +49,10 @@
         </fieldset>
     </section>
     <p>
-        {{form_m.active.label}}: {{form_m.active}}
+        {{form_d.active.label}}: {{form_d.active}}
     </p>
     <ul>
-        {% for field in form_m %}
+        {% for field in form_d %}
         {% for error in field.error %}
 
         <li>{{ error }}</li>

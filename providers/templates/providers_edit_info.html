@@ -132,10 +132,23 @@
 
 
     <button id="submit">Save</button>
+
+    <p><button id="deleteAcct" class="modalTrigger">Delete Account</button></p>
+    <div class="modal">
+        <div class="modal-content">
+            <span class="close-button">X</span>
+            <p>You are about to delete your account. You will not be able to recover the information. If you want to
+                tempoarily disable the account, please uncheck "active"</p>
+        </div>
+    </div>
 </form>
 
+<form action="{{url_for('providers_bp.delete_prov')}}" method="post">
+    {{ form.hidden_tag() }}
+    <button>Delete Profile Permanently</button>
+</form>
 
 {% endblock %}
 {% block scripts%}
 <script src="{{url_for('providers_bp.static',filename='edit_info_js.js')}}"></script>
-<script src="{{url_for('providers_bp.static',filename='edit_avail.js')}}"></script>{% endblock%}
+<script src="{{url_for('static',filename='app.js')}}"></script>{% endblock%}

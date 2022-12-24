@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, g, redirect, flash, request, url_for
 from auth.auth import auth_bp, check_login
 from auth.auth import check_login, check_is_school
-from models import School, Province, City, Recurring_availability,Recurring_Day,Date_avail, Restriction_School, Restriction
+from models import School, Province, City, Recurring_availability_school,Recurring_Day,Date_avail_school, Restriction_School, Restriction
 from forms import SchoolInfoForm, DaysForm,RestrictionForm
 from util import register_new_city,set_prov_choices,set_city_choices
 
@@ -44,7 +44,7 @@ def learn_more():
     return render_template('schools_learn_more.html')
 
 
-@schools_bp.route('/edit_info', methods=['GET'])
+@schools_bp.route('/edit', methods=['GET'])
 @check_is_school
 @check_login
 def edit_info():
@@ -53,8 +53,8 @@ def edit_info():
     all_cities=set_city_choices()
     all_days=Recurring_Day.get_all_days()
     all_restrict=Restriction.get_all_restrict()
-    pd=Recurring_availability.get_days(id=g.user.id,user_type=g.user.user_type) #all recurring availabilities with start and end dates
-    prov_dates=Date_avail.get_dates(id=g.user.id, user_type=g.user.user_type) #all specific dates related to this school
+    pd=Recurring_availability_school.get_days(id=g.user.id) #all recurring availabilities with start and end dates
+    prov_dates=Date_avail_school.get_dates(id=g.user.id) #all specific dates related to this school
     pr=Restriction_School.get_restrictions(id=g.user.id)
     
     
@@ -162,10 +162,10 @@ def save_info():
                         recurring_days_to_db.append(data)
                 
                 # save recurring availabilties
-                resd=Recurring_availability.set_days(id=g.user.id,fd=recurring_days_to_db, user_type=g.user.user_type)
+                resd=Recurring_availability_school.set_days(id=g.user.id,fd=recurring_days_to_db)
                 
                 # save specific dates
-                resdates=Date_avail.set_dates(id=g.user.id,add_dates=form.dates.data, user_type=g.user.user_type)
+                resdates=Date_avail_school.set_dates(id=g.user.id,add_dates=form.dates.data)
             
                 #save restrictions
                 resrestrict=Restriction_School.set_restrictions(id=g.user.id,fr=form_restrict.restrictions.data)
@@ -197,3 +197,23 @@ def save_info():
                   form_restrict: {form_restrict.errors}''', 'failure_bkg')
         return redirect(url_for("schools_bp.edit_info"))
         
+        
+@schools_bp.route('/delete', methods=['POST'])
+@check_is_school
+@check_login
+def delete_school():
+    # get provider info
+    s=School.get_school(g.user.id)
+    if s[0]:
+        s=s[1]
+        res=s.delete()
+        if res[0]:
+            flash(f'Profile deleted!', 'success_bkg')
+            return redirect(url_for('general_bp.home'))
+        else:
+            flash(f'Error deleting profile: {res[1]}', 'failure_bkg')
+            return redirect(url_for('schools_bp.edit_info'))
+    else:
+        flash(f'Error getting school data', 'failure_bkg')
+        return redirect(url_for('schools_bp.edit_info'))
+    

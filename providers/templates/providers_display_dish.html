@@ -29,7 +29,7 @@
     Max meals: {{d.max_meals}}
 </p>
 <p>
-    Dish related to: {{d.related_to_dish}}
+    Dish related to: {{related_to_dish}}
 </p>
 <p>
     Guidelines passed: {{d.pass_guidelines}}
@@ -55,4 +55,4 @@
 
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('providers_bp.static',filename='edit_avail.js')}}"></script>{% endblock%}
+{% endblock%}

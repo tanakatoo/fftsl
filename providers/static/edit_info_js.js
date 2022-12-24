@@ -182,3 +182,7 @@ document.querySelector("#submit").addEventListener("click", (e) => {
     }
 
 })
+
+document.querySelector("#deleteAcct").addEventListener('click', (e) => {
+
+})

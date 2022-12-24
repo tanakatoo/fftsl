@@ -8,6 +8,9 @@
     <h3>company info</h3>
     <ul>
         <li>
+            Active: {{p.active}}
+        </li>
+        <li>
             Name: <a href="{{url_for('providers_bp.info_details')}}">{{p.name}}</a>
         </li>
         <li>
@@ -28,15 +31,7 @@
         <li>
             Email: {{email}}
         </li>
-        <li>
-            Sales pitch: {{p.sales_pitch}}
-        </li>
-        <li>
-            ADD RECURRING DATES, SPECIFIC DATES HERE??
-        </li>
-        <li>
-            Active: {{p.active}}
-        </li>
+
     </ul>
     <fieldset>
         <legend>
@@ -71,43 +66,26 @@
         <li>
             Name: <a href="{{url_for('providers_bp.view_dish',id=dish.id)}}">{{dish.name}}</a>
         </li>
-
-        <li>
-            Recipe: {%if dish.recipe %}{{dish.recipe}}{% endif %}
-        </li>
-        <li>
-            Number of servings: {%if dish.num_servings %}{{dish.num_servings}}{% endif %}
-        </li>
-        <li>
-            Recipe to display:{%if dish.ingred_disp %}{{dish.ingred_disp}}{% endif %}
-        </li>
         <li>
             Price: {%if dish.price %}{{dish.price}}{% endif %}
         </li>
+
         <li>
-            Sales pitch: {%if dish.sales_pitch %}{{dish.sales_pitch}}{% endif %}
-        </li>
-        <li>
-            Max meals you can serve: {%if dish.max_meals %}{{dish.max_meals}}{% endif %}
-        </li>
-        <li>
-            Related to: {%if dish.related_to_dish %}{{dish.related_to_dish}}{% endif %}
-        </li>
-        <li>
-            Passed guidelines: {%if dish.pass_guidelines %}{{p.pass_guidelines}}{% endif %}
+            Passed guidelines: {%if dish.pass_guidelines %}{{dish.pass_guidelines}}{% endif %}
         </li>
         <li>
             <button><a href="{{url_for('providers_bp.edit_dish',id=dish.id)}}">Edit</a></button>
         </li>
     </ul>
     {% endfor %}
-    <button {% if menuDisable=="true" %}disabled {%endif%}>
-        <a {% if not menuDisable=="true" %} href="/providers/add_dish" {%endif%}>Add Dish</a></button>
+
 
     {%else%}
     <p>No menus yet! Please fill out profile in order to make your menu!</p>
     {%endif%}
-
+    <button {% if menuDisable=="true" %}disabled {%endif%}>
+        <a {% if not menuDisable=="true" %} href="{{url_for('providers_bp.add_dish')}}" {%endif%}>Add
+            Dish</a></button>
 
 </section>
 

@@ -52,3 +52,16 @@ if (document.querySelector("#loginForm")) {
         }
     })
 }
+
+if (document.querySelector("#setPassword")) {
+    document.querySelector("#submit").addEventListener("click", (e) => {
+        if (document.querySelector("#password").value != document.querySelector("#passwordConfirm").value) {
+            e.preventDefault()
+            document.querySelector(".error").innerText = "Passwords need to match"
+        }
+        if (document.querySelector("#password").value.length < 8) {
+            e.preventDefault()
+            document.querySelector(".error").innerText = "Password must be at least 8 characters long"
+        }
+    })
+}

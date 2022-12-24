@@ -119,7 +119,7 @@ class City(db.Model):
     @classmethod
     def get_cities(cls):
         try:
-            c=City.query.all()
+            c=City.query.order_by('name').all()
             return (True,c)
         except Exception as e:
             return (False, e)
@@ -168,7 +168,7 @@ class Province(db.Model):
     @classmethod
     def get_provinces(cls):
         try:
-            p=Province.query.all()
+            p=Province.query.order_by('name').all()
             return (True,p)
         except Exception as e:
             return (False, e)
@@ -203,13 +203,13 @@ class School(db.Model):
     phone=db.Column(db.String(50))
     active=db.Column(db.Boolean, nullable=False,default=True)
     
-    user=db.relationship('User',back_populates="school")
+    user=db.relationship('User',back_populates="school", cascade='save-update, merge, delete')
     city=db.relationship('City', back_populates="school")
     province=db.relationship('Province', back_populates="school")
-    dates_avail=db.relationship('Date_avail',back_populates="schools", cascade='save-update, merge, delete')
+    dates_avail=db.relationship('Date_avail_school',back_populates="schools", cascade='save-update, merge, delete')
     recurring_days=db.relationship("Recurring_Day",
-                                   secondaryjoin="Recurring_availability.recurring_day_id == Recurring_Day.id",
-                                   secondary="recurring_availabilities",back_populates="schools", cascade='save-update, merge, delete')
+                                   secondaryjoin="Recurring_availability_school.recurring_day_id == Recurring_Day.id",
+                                   secondary="recurring_availabilities_schools",back_populates="schools", cascade='save-update, merge, delete')
     restrictions=db.relationship("Restriction", secondaryjoin="Restriction_School.restriction_id == Restriction.id",
                                  secondary="restrictions_schools",back_populates="schools", cascade='save-update, merge, delete')
     
@@ -271,6 +271,18 @@ class School(db.Model):
         except Exception as e:
             db.session.rollback()
             return (False,e)
+        
+    def delete(self):
+        try:
+            # set to null all of the dishes that have this dish as a related dish
+            
+            db.session.delete(self)
+            db.session.commit()
+            return (True, "deleted")
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
+            
     
 class Recurring_Day(db.Model):
     __tablename__='recurring_days'
@@ -288,8 +300,8 @@ class Recurring_Day(db.Model):
                                    secondaryjoin="Recurring_availability.provider_id == Provider.user_id",
                                    secondary="recurring_availabilities",back_populates="recurring_days")
     schools=db.relationship("School", 
-                            secondaryjoin="Recurring_availability.school_id == School.user_id",
-                            secondary="recurring_availabilities",back_populates="recurring_days")
+                            secondaryjoin="Recurring_availability_school.school_id == School.user_id",
+                            secondary="recurring_availabilities_schools",back_populates="recurring_days")
 
     
     @classmethod
@@ -304,101 +316,132 @@ class Recurring_availability(db.Model):
     __tablename__='recurring_availabilities'
     def __repr__(self):
         return f"""provider_id={self.provider_id},
-            school_id={self.school_id},
             recurring_day_id={self.recurring_day_id},
             start_date={self.start_date},
             end_date={self.end_date}>"""
 
-    id=db.Column(db.Integer,
-                 primary_key=True,
-                 autoincrement=True)
     provider_id= db.Column(db.Integer,
-                           db.ForeignKey('providers.user_id'))
-    school_id= db.Column(db.Integer,
-                           db.ForeignKey('schools.user_id'))
+                           db.ForeignKey('providers.user_id'),
+                           primary_key=True)
     
     recurring_day_id= db.Column(db.Integer,
                                 db.ForeignKey('recurring_days.id'),
-                                nullable=False)
-    start_date=db.Column(db.Date)
-    end_date=db.Column(db.Date)
+                                nullable=False,
+                                primary_key=True)
+    start_date=db.Column(db.Date,
+                         primary_key=True)
+    end_date=db.Column(db.Date,
+                       primary_key=True)
     
     @classmethod
-    def get_days(cls,id, user_type):
+    def get_days(cls,id):
         """returns day of week (not id, the word), start date and end date"""
         try:
-            if user_type=='provider':
-                d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).all()
-            else:
-                d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.school_id==id).all()
-            # d=Recurring_Day.query.filter_by(id=id).all()
+            d=db.session.query(Recurring_Day.day, Recurring_availability.recurring_day_id,Recurring_availability.start_date,Recurring_availability.end_date).join(Recurring_Day).filter(Recurring_availability.provider_id==id).order_by('start_date').all()
+           
             return (True, d)
         except Exception as e:
             return (False, e)
     
     
     @classmethod
-    def set_days(cls,id,fd, user_type):
-        # try:
+    def set_days(cls,id,fd):
+        try:
             # fd is list of the days IDs
             # delete all the records associated with user first
-            if user_type=='provider':
-                Recurring_availability.query.filter_by(provider_id=id).delete()
-            else:
-                Recurring_availability.query.filter_by(school_id=id).delete()
+            Recurring_availability.query.filter_by(provider_id=id).delete()
             db.session.commit()
             
             # then add all the records again
-            if user_type=='provider':
-                for data in fd:
-                    d=Recurring_availability(provider_id=data['provider_id'],
-                                             recurring_day_id=data['recurring_day_id'],
-                                             start_date=data['start_date'],
-                                             end_date=data['end_date'])
-                    db.session.add(d)
-                    db.session.commit()
-            else:
-                for data in fd:
-                    d=Recurring_availability(school_id=data['school_id'],
-                                             recurring_day_id=data['recurring_day_id'],
-                                             start_date=data['start_date'],
-                                             end_date=data['end_date'])
-                    db.session.add(d)
-                    db.session.commit()
+            for data in fd:
+                d=Recurring_availability(provider_id=data['provider_id'],
+                                            recurring_day_id=data['recurring_day_id'],
+                                            start_date=data['start_date'],
+                                            end_date=data['end_date'])
+                db.session.add(d)
+                db.session.commit()
 
             return (True, fd)
-        # except Exception as e:
-        #     db.session.rollback()
-        #     return (False, e)
+        except Exception as e:
+            db.session.rollback()
+            return (False, e)
+        
+class Recurring_availability_school(db.Model):
+    __tablename__='recurring_availabilities_schools'
+    def __repr__(self):
+        return f"""
+            school_id={self.school_id},
+            recurring_day_id={self.recurring_day_id},
+            start_date={self.start_date},
+            end_date={self.end_date}>"""
+
+    school_id= db.Column(db.Integer,
+                           db.ForeignKey('schools.user_id'),
+                            primary_key=True)
+    
+    recurring_day_id= db.Column(db.Integer,
+                                db.ForeignKey('recurring_days.id'),
+                                nullable=False,
+                                primary_key=True)
+    start_date=db.Column(db.Date,
+                         primary_key=True)
+    end_date=db.Column(db.Date,
+                       primary_key=True)
+    
+    @classmethod
+    def get_days(cls,id):
+        """returns day of week (not id, the word), start date and end date"""
+        try:
+            d=db.session.query(Recurring_Day.day, Recurring_availability_school.recurring_day_id,Recurring_availability_school.start_date,Recurring_availability_school.end_date).join(Recurring_Day).filter(Recurring_availability_school.school_id==id).all()
+            return (True, d)
+        except Exception as e:
+            return (False, e)
+    
+    
+    @classmethod
+    def set_days(cls,id,fd):
+        try:
+            # fd is list of the days IDs
+            # delete all the records associated with user first
+            Recurring_availability_school.query.filter_by(school_id=id).delete()
+            db.session.commit()
+            
+            # then add all the records again
+            for data in fd:
+                d=Recurring_availability_school(school_id=data['school_id'],
+                                            recurring_day_id=data['recurring_day_id'],
+                                            start_date=data['start_date'],
+                                            end_date=data['end_date'])
+                db.session.add(d)
+                db.session.commit()
+
+            return (True, fd)
+        except Exception as e:
+            db.session.rollback()
+            return (False, e)
 
 class Date_avail(db.Model):
     __tablename__='dates_avail'
     def __repr__(self):
-        return f"<date={self.date}, provider_id={self.provider_id}, school_id={self.school_id}>"
+        return f"<date={self.date}, provider_id={self.provider_id}>"
 
-    id=db.Column(db.Integer,
-                 primary_key=True,
-                  autoincrement=True)
     provider_id= db.Column(db.Integer,
-                           db.ForeignKey('providers.user_id'))
-    school_id=db.Column(db.Integer,
-                        db.ForeignKey('schools.user_id'))
+                           db.ForeignKey('providers.user_id'),
+                           primary_key=True)
                            
     date = db.Column(db.Date,
-                     nullable=False)
+                     nullable=False,
+                     primary_key=True)
     
     providers=db.relationship('Provider',back_populates="dates_avail")
-    schools=db.relationship('School',back_populates="dates_avail")
 
     
     @classmethod
-    def set_dates(cls,id,add_dates, user_type):
+    def set_dates(cls,id,add_dates):
         try:
             # remove all the dates first and then add it back
-            if user_type=='provider':
-                dates=Date_avail.query.filter_by(provider_id=id).all()
-            else:
-                dates=Date_avail.query.filter_by(school_id=id).all()
+            dates=Date_avail.query.filter_by(provider_id=id).all()
+          
             for d in dates:
                 db.session.delete(d)
                 db.session.commit()
@@ -406,18 +449,13 @@ class Date_avail(db.Model):
             if ',' in add_dates:
                 list_dates=add_dates.split(',')
                 for d in list_dates:
-                    if user_type=='provider':
-                        d_add=Date_avail(provider_id=id,date=d)
-                    else:
-                        d_add=Date_avail(school_id=id,date=d)
+                    d_add=Date_avail(provider_id=id,date=d)
                     db.session.add(d_add)
                     db.session.commit()
             # if not all the dates are delete, add just one date
             elif not add_dates == '':
-                if user_type=='provider':
-                    d=Date_avail(provider_id=id,date=add_dates)
-                else:
-                    d=Date_avail(school_id=id,date=add_dates)
+                d=Date_avail(provider_id=id,date=add_dates)
+               
                 db.session.add(d)
                 db.session.commit()
 
@@ -426,15 +464,13 @@ class Date_avail(db.Model):
             return (False, e)
     
     @classmethod
-    def get_dates(cls,id, user_type):
+    def get_dates(cls,id):
         try:
             # delete the ones that are before today
-            res=cls.remove_old_dates(id, user_type)
+            res=cls.remove_old_dates(id)
             if res:
-                if user_type=='provider':
-                    dates=Date_avail.query.filter_by(provider_id=id).all()
-                else:
-                    dates=Date_avail.query.filter_by(school_id=id).all()
+                dates=Date_avail.query.filter_by(provider_id=id).order_by('date').all()
+                
                 return (True,dates)
             else:
                 return (False,'Error in getting available dates')
@@ -442,13 +478,11 @@ class Date_avail(db.Model):
         except Exception as e:
             return (False, e)
         
-    def remove_old_dates(id, user_type):
+    def remove_old_dates(id):
         try:
-            if user_type=='provider':
-                dates=Date_avail.query.filter_by(provider_id=id).all()
-            else:
-                dates=Date_avail.query.filter_by(school_id=id).all()
-
+          
+            dates=Date_avail.query.filter_by(provider_id=id).all()
+            
             # get today's date
             # compare and if it's older, delete from db
             today=date.today().strftime("%Y-%m-%d")
@@ -462,6 +496,76 @@ class Date_avail(db.Model):
         except Exception as e:
             return False
 
+class Date_avail_school(db.Model):
+    __tablename__='dates_avail_schools'
+    def __repr__(self):
+        return f"<date={self.date}, school_id={self.school_id}>"
+
+    school_id=db.Column(db.Integer, 
+                        db.ForeignKey('schools.user_id'),
+                        primary_key=True)           
+    date = db.Column(db.Date,
+                     nullable=False,
+                     primary_key=True)
+    
+    schools=db.relationship('School',back_populates="dates_avail")
+
+    
+    @classmethod
+    def set_dates(cls,id,add_dates):
+        try:
+            # remove all the dates first and then add it back
+            dates=Date_avail_school.query.filter_by(school_id=id).all()
+            for d in dates:
+                db.session.delete(d)
+                db.session.commit()
+            # parse add_dates into list if more than 1 date
+            if ',' in add_dates:
+                list_dates=add_dates.split(',')
+                for d in list_dates:
+                    d_add=Date_avail_school(school_id=id,date=d)
+                    db.session.add(d_add)
+                    db.session.commit()
+            # if not all the dates are delete, add just one date
+            elif not add_dates == '':
+                d=Date_avail_school(school_id=id,date=add_dates)
+                db.session.add(d)
+                db.session.commit()
+
+            return (True,dates)
+        except Exception as e:
+            return (False, e)
+    
+    @classmethod
+    def get_dates(cls,id):
+        # try:
+            # delete the ones that are before today
+            res=cls.remove_old_dates(id)
+            if res:
+                dates=Date_avail_school.query.filter_by(school_id=id).all()
+                return (True,dates)
+            else:
+                return (False,'Error in getting available dates')
+            
+        # except Exception as e:
+        #     return (False, e)
+        
+    def remove_old_dates(id):
+        try:
+            dates=Date_avail_school.query.filter_by(school_id=id).all()
+            
+            # get today's date
+            # compare and if it's older, delete from db
+            today=date.today().strftime("%Y-%m-%d")
+            t=datetime.strptime(today,"%Y-%m-%d").date()
+
+            for d in dates:
+                if d.date < t:
+                    db.session.delete(d)
+                    db.session.commit()
+            return True
+        except Exception as e:
+            return False
 
 class Provider(db.Model):
     __tablename__='providers'
@@ -512,7 +616,7 @@ class Provider(db.Model):
     recurring_days=db.relationship("Recurring_Day",
                                    secondaryjoin="Recurring_availability.recurring_day_id == Recurring_Day.id",
                                    secondary="recurring_availabilities",back_populates="providers", cascade='save-update, merge, delete')
-    user=db.relationship('User', back_populates="provider")
+    user=db.relationship('User', back_populates="provider", cascade='save-update, merge, delete')
     dishes=db.relationship('Dish',back_populates="provider", cascade='save-update, merge, delete')
     cuisines=db.relationship("Cuisine", secondary="cuisine_providers",back_populates="providers", cascade='save-update, merge, delete')
     dates_avail=db.relationship('Date_avail',back_populates="providers", cascade='save-update, merge, delete')
@@ -530,7 +634,7 @@ class Provider(db.Model):
     @classmethod
     def set_provider(cls, fp, id,p=None):
             
-        # try:
+        try:
              # change geocode to null if it is empty string
             if fp['geocode_lat']=='' or fp['geocode_lat'] is None:
                 geocode_lat=None
@@ -586,9 +690,9 @@ class Provider(db.Model):
             db.session.add(p)
             db.session.commit()
             return (True, p)
-        # except Exception as e:
-        #     db.session.rollback()
-        #     return (False,e)
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
 
     def set_settings(self,fp):
         try:
@@ -597,7 +701,6 @@ class Provider(db.Model):
             self.serve_num_org_per_day=fp['serve_num_org_per_day']
             
             db.session.add(self)
-            print(f'######### {self}###')
             # once committed, self is gone, so we have to use this so it won't expire and can return self
             # db.session.expire_on_commit = False
             db.session.commit()
@@ -605,6 +708,19 @@ class Provider(db.Model):
             return (True,fp)
         except Exception as e:
              return (False,e)
+        
+    def delete(self):
+        try:
+            # set to null all of the dishes that have this dish as a related dish
+            
+            db.session.delete(self)
+            db.session.commit()
+            return (True, "deleted")
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
+            
+        
    
 class Dish(db.Model):
     __tablename__="dishes"
@@ -612,6 +728,7 @@ class Dish(db.Model):
     def __repr__(self):
         return f"""<id={self.id}, name={self.name}, 
             provider_id={self.provider_id},
+            category={self.category_id},
             recipe={self.recipe},
             num_servings={self.num_servings},
             ingred_disp={self.ingred_disp},
@@ -631,6 +748,8 @@ class Dish(db.Model):
     name=db.Column(db.String(200),
                    nullable=False, 
                    unique=True)
+    category_id=db.Column(db.Integer,
+                          db.ForeignKey('categories.id'))
     recipe=db.Column(db.Text)
     num_servings=db.Column(db.Integer)
     ingred_disp=db.Column(db.Text)
@@ -648,6 +767,7 @@ class Dish(db.Model):
     provider=db.relationship("Provider", back_populates="dishes")
     restrictions=db.relationship("Restriction", secondaryjoin="Restriction_Dish.restriction_id == Restriction.id",
                                  secondary="restrictions_dishes",back_populates="dishes", cascade='save-update, merge, delete')
+    category=db.relationship("Category", primaryjoin="Category.id==Dish.category_id", back_populates="dishes")
     
     @classmethod
     def get_menu(cls,id):
@@ -665,6 +785,13 @@ class Dish(db.Model):
         except Exception as e:
             return (False,e)
     
+    @classmethod
+    def get_name(cls,id):
+        try:
+            d=Dish.query.get(id)
+            return (True,d.name)
+        except Exception as e:
+            return (False,e)
     
     def update_dish(self,fd):
         """update an existing dish"""
@@ -686,24 +813,24 @@ class Dish(db.Model):
         else:
             max_meals=int(fd['max_meals'])
         
-        # try:
-        self.name=fd['name']
-        self.recipe=fd['recipe']
-        self.num_servings=num_servings
-        self.ingred_disp=fd['ingred_disp']
-        self.price=price
-        self.sales_pitch=fd['sales_pitch']
-        self.max_meals=max_meals
-        self.related_to_dish=related_to_dish
-        self.pass_guidelines=fd['pass_guidelines']
-        self.active=fd['active']
-        
-        db.session.add(self)
-        db.session.commit()
-        return (True, self)
-        # except Exception as e:
-        #     db.session.rollback()
-        #     return (False,e)
+        try:
+            self.name=fd['name']
+            self.recipe=fd['recipe']
+            self.num_servings=num_servings
+            self.ingred_disp=fd['ingred_disp']
+            self.price=price
+            self.sales_pitch=fd['sales_pitch']
+            self.max_meals=max_meals
+            self.related_to_dish=related_to_dish
+            self.pass_guidelines=fd['pass_guidelines']
+            self.active=fd['active']
+            
+            db.session.add(self)
+            db.session.commit()
+            return (True, self)
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
         
     @classmethod
     def insert_dish(cls, fd):
@@ -739,13 +866,68 @@ class Dish(db.Model):
                         pass_guidelines=fd['pass_guidelines'],
                         active=fd['active']
                    )
-            print(d)
             db.session.add(d)
             db.session.commit()
             return (True, d)
         except Exception as e:
             db.session.rollback()
             return (False,e)
+
+    def delete_dish(self):
+        try:
+            # set to null all of the dishes that have this dish as a related dish
+            dishes=Dish.query.filter_by(related_to_dish=self.id).all()
+            for d in dishes:
+                d.related_to_dish = None
+            
+            db.session.delete(self)
+            db.session.commit()
+            return (True, "deleted")
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
+        
+class Category(db.Model):
+    __tablename__="categories"
+    
+    def __repr__(self):
+        return f"<id={self.id}, name={self.name}>"
+    
+    id= db.Column(db.Integer,
+                  primary_key=True,
+                  autoincrement=True)
+    name=db.Column(db.String(50), 
+                   unique=True)
+     
+    dishes=db.relationship("Dish", primaryjoin="Dish.category_id==Category.id", back_populates="category")
+
+    @classmethod
+    def get_all_cat(cls):
+        try:
+            c=Category.query.all()
+            return (True,c)
+        except Exception as e:
+            return (False,e)
+    
+    @classmethod
+    def get_name(cls, id):
+        try:
+            c=Category.query.get(id)
+            return (True,c.name)
+        except Exception as e:
+            return (False,e)
+    
+    """In the future if setting categories is a feature"""
+    # @classmethod
+    # def set_cat(cls, name):
+    #     try:
+    #         c=Category(name=name)
+    #         db.session.add(c)
+    #         db.session.commit()
+    #         return (True,c)
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         return (False,e)
 
 class Cuisine(db.Model):
     __tablename__="cuisines"
@@ -769,16 +951,17 @@ class Cuisine(db.Model):
         except Exception as e:
             return (False,e)
     
-    @classmethod
-    def set_cuisine(cls, name):
-        try:
-            c=Cuisine(name=name)
-            db.session.add(c)
-            db.session.commit()
-            return (True,c)
-        except Exception as e:
-            db.session.rollback()
-            return (False,e)
+    """In the future if setting cuisines is a feature"""
+    # @classmethod
+    # def set_cuisine(cls, name):
+    #     try:
+    #         c=Cuisine(name=name)
+    #         db.session.add(c)
+    #         db.session.commit()
+    #         return (True,c)
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         return (False,e)
 
 class Cuisine_Provider(db.Model):
     __tablename__='cuisine_providers'
@@ -868,12 +1051,12 @@ class Restriction_Dish(db.Model):
         except Exception as e:
             return (False, e)
     
-    
+    @classmethod
     def set_restrictions(cls,id,fr):
-        # try:
+        try:
             # fc is list of the restriction IDs
             # delete all the records associated with user first
-            cls.query.filter_by(dish_id=id).delete()
+            Restriction_Dish.query.filter_by(dish_id=id).delete()
             db.session.commit()
             # then add all the records again
             for fid in fr:
@@ -882,9 +1065,9 @@ class Restriction_Dish(db.Model):
                 db.session.commit()
 
             return (True, fr)
-        # except Exception as e:
-        #     db.session.rollback()
-        #     return (False, e)
+        except Exception as e:
+            db.session.rollback()
+            return (False, e)
 
 
 class Restriction_School(db.Model):
@@ -907,7 +1090,7 @@ class Restriction_School(db.Model):
     
     @classmethod
     def set_restrictions(cls,id,fr):
-        # try:
+        try:
             # fc is list of the restriction IDs
             # delete all the records associated with user first
             cls.query.filter_by(school_id=id).delete()
@@ -919,6 +1102,6 @@ class Restriction_School(db.Model):
                 db.session.commit()
 
             return (True, fr)
-        # except Exception as e:
-        #     db.session.rollback()
-        #     return (False, e)
+        except Exception as e:
+            db.session.rollback()
+            return (False, e)

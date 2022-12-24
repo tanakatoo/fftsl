@@ -1,0 +1,4 @@
+ user_id | name | address | city_id | province_id | geocode_lat | geocode_long | contact_name | phone | sales_pitch | max_meals_per_day | min_meals | serve_num_org_per_day | active | website 
+---------+------+---------+---------+-------------+-------------+--------------+--------------+-------+-------------+-------------------+-----------+-----------------------+--------+---------
+(0 rows)
+

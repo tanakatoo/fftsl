@@ -124,9 +124,12 @@
 
     <button id="submit">Save</button>
 </form>
+<form action="{{url_for('schools_bp.delete_school')}}" method="POST">
+    <button>Delete Profile</button>
+</form>
 
 
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('schools_bp.static',filename='edit_avail.js')}}"></script>
+<script src="{{url_for('static',filename='app.js')}}"></script>
 <script src="{{url_for('schools_bp.static',filename='edit_info.js')}}"></script>{% endblock%}
