@@ -14,7 +14,22 @@
     </p>
     <p>
         {{form_d.recipe.label}} {{form_d.recipe}}
+        <button id="analyze">Analyze</button>
+    <div id="analyzeResults">
+        <h5>results</h5>
+        <div class="nutContainer">
+            <ul>
+                <li class="oneNut">
+                    <span class="label">Protein: <span id="protein">13%</span></span>
+                    <span class="bg-nut">
+                        <span class="nut-data" style="width: 13%"></span>
+                    </span>
 
+                </li>
+            </ul>
+        </div>
+
+    </div>
     </p>
     <p>
         {{form_d.num_servings.label}} {{form_d.num_servings}}
@@ -65,4 +80,4 @@
 </form>
 {% endblock %}
 {% block scripts%}
-{% endblock%}
+<script src="{{url_for('providers_bp.static',filename='nutrition.js')}}"></script> {% endblock%}

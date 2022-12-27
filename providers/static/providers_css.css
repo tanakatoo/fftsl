@@ -38,3 +38,28 @@ section{
     margin-bottom:10px;
 }
 
+.nutContainer{
+    width: 450px;
+}
+.bg-nut{
+    background-color: antiquewhite;
+    display: block;
+    width: 100%;
+    border-radius: 4px;
+    padding: 0;
+    border:0;
+    position: relative;
+}
+
+.nut-data{
+    background-color: blue;
+    display: block;
+}
+.oneNut{
+    list-style: none;
+    width: 100%;
+}
+
+.label{
+    display: block;
+}

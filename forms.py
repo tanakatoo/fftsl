@@ -20,6 +20,7 @@ class LoginForm(FlaskForm):
     
 class ProviderInfoForm(FlaskForm):
     name=StringField("Name of Restaurant/Caterer", validators=[InputRequired()])
+    website=StringField("Website")
     address=StringField("Address", id="address")
     city_id=SelectField("City", coerce=int, validate_choice=False)
     province_id=SelectField("Province", coerce=int, validate_choice=False)

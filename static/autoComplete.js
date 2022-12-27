@@ -7,6 +7,7 @@ document.querySelector("#address").addEventListener("input", getAddresses)
 let timer
 
 function getAddresses() {
+
     input = document.querySelector("#address").value
     if (input.length > 2) {
 
@@ -33,7 +34,6 @@ function getAddresses() {
                 })
 
                 // put all address information in an array of objects
-                console.log(res.data.results)
                 showAddresses = makeAddressObject(res)
                 // make a table under the input box for the results
                 table = makeAutoCompleteTable(showAddresses)
@@ -155,7 +155,12 @@ function completeAddress(id, showAddresses) {
         hidden.name = "newCity"
         hidden.dataset.id = citySelect.selectedIndex // this is to be able to select this option to delete it from the select dropdown if required
         hidden.value = citySelect.options[citySelect.selectedIndex].text
-        document.querySelector("#providerEditForm").append(hidden)
+        if (document.querySelector("#providerEditForm")) {
+            document.querySelector("#providerEditForm").append(hidden)
+        } else if (document.querySelector("#schoolEditForm")) {
+            document.querySelector("#schoolEditForm").append(hidden)
+        }
+
 
     }
     // do the same for province if this is used outside Ontario
@@ -180,9 +185,5 @@ document.querySelector("#submit").addEventListener("click", (e) => {
         document.querySelector("#geolat").value = null
         document.querySelector("#geolong").value = null
     }
-
-})
-
-document.querySelector("#deleteAcct").addEventListener('click', (e) => {
 
 })

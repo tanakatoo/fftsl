@@ -4,6 +4,7 @@ from models import db, connect_db
 import os
 from config import DevConfig, CURR_USER_KEY
 from models import User
+from flask_cors import CORS
 
 
 # import blueprints
@@ -16,6 +17,7 @@ from emails.emailing import email_bp
 
 
 app = Flask(__name__)
+CORS(app)
 app.debug=True
 app.config.from_object(DevConfig)
 debug=DebugToolbarExtension(app)
