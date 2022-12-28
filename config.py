@@ -5,7 +5,10 @@ load_dotenv()
 
 #global constants
 CURR_USER_KEY='curr_user'
+UPLOAD_FOLDER="static/uploads"
 
+ALLOWED_EXTENSIONS = {'.txt', '.pdf', '.png', '.jpg', '.jpeg', '.gif'}
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config(object):
     
@@ -16,6 +19,7 @@ class Config(object):
     # DB
     SQLALCHEMY_TRACK_MODIFICATIONS= False
     SQLALCHEMY_ECHO= True
+    
     
 
     MAIL_SERVER= 'smtp.sendgrid.net'
@@ -43,3 +47,4 @@ class DevConfig(Config):
     TESTING=True
     SQLALCHEMY_DATABASE_URI=os.environ.get('DEV_DATABASE_URI')
     DEBUG_TB_INTERCEPT_REDIRECTS= False
+    UPLOAD_FOLDER=UPLOAD_FOLDER

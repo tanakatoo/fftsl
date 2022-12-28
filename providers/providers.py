@@ -3,7 +3,11 @@ from auth.auth import check_login, check_is_provider
 from models import Provider, Province, City, Dish, Cuisine, Cuisine_Provider, Recurring_availability, Recurring_Day, Date_avail, Restriction,Restriction_Dish, Category
 from forms import ProviderInfoForm, DishInfoForm, CuisineForm, DaysForm, RestrictionForm, CategoryForm
 from util import register_new_city, set_city_choices,set_prov_choices
-# have to import the model for this here
+from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS, BASEDIR
+import os
+from werkzeug.utils import secure_filename
+from PIL import Image
+
 
 providers_bp = Blueprint('providers_bp', __name__,
     template_folder='templates', static_folder='static')
@@ -222,18 +226,36 @@ def save_info():
                 
                 resd=Recurring_availability.set_days(id=g.user.id,fd=recurring_days_to_db)
                 # save specific dates
-                
                 resdates=Date_avail.set_dates(id=g.user.id,add_dates=form.dates.data)
-            
                 
-                if res[0] and resc[0] and resd[0] and resdates[0]:
+                # save inspection report
+                file=False
+                if 'inspectionFile' in request.files:
+                    inspectionFile=request.files['inspectionFile']
+                    
+                    if inspectionFile:
+                        file_ext = os.path.splitext(inspectionFile.filename)[1]
+                        if file_ext in ALLOWED_EXTENSIONS:
+                            # fileName=secure_filename(inspectionFile.filename)
+                            fileName=str(g.user.id) + file_ext #make our own file name using userid
+                            path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
+                            inspectionFile.save(path)
+                            photo = Image.open(path) #open the image and save a smaller version of it
+                            photo = photo.resize((600,600))
+                            photo.save(path)
+                            file=True
+                else:
+                    file=True
+                
+                if res[0] and resc[0] and resd[0] and resdates[0] and file:
                     flash(f'Data saved!', 'success_bkg')
                 else:
                     flash (f'''An error occured saving data: 
                            provider:{res[1]}, 
                            cuisine: {resc[1]},
                            recurring_availability: {resd[1]},
-                           resdates: {resdates[1]}.  Please contact help@fftsl.ca''', 'failure_bkg')
+                           resdates: {resdates[1]},
+                           file: {file}.  Please contact help@fftsl.ca''', 'failure_bkg')
 
                 # have to get all the data again because the data was deleted from saving the data above, so the session doesn't have the newest info
                 
@@ -250,7 +272,9 @@ def save_info():
                  days: {all_days[1]}''')
         return redirect(url_for("providers_bp.edit_info"))
 
-    
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 # @providers_bp.route('/dishes/add', methods=['GET'])
 # @check_is_provider
 # @check_login
@@ -355,13 +379,19 @@ def add_dish():
     p=Provider.get_provider(g.user.id)
     m=Dish.get_menu(g.user.id)
     all_restrict=Restriction.get_all_restrict()
+    all_categories=Category.get_all_cat()
     
-    if p[0] and m[0] and all_restrict[0]: #got provider
+    if p[0] and m[0] and all_restrict[0] and all_categories[0]: #got provider
         p=p[1] 
         m=m[1]
         all_restrict=all_restrict[1]
+        all_categories=all_categories[1]
         
         form_d=DishInfoForm(active=True) 
+        form_cat=CategoryForm()
+        categories=[(c.id,c.name) for c in all_categories]
+        form_cat.categories.choices=categories
+        form_cat.categories.data=1 #set entree as the default type of meal
         
         if m:
             # user can select which dish they want to link to (because we are adding a new dish)
@@ -408,9 +438,12 @@ def add_dish():
                     return redirect(url_for("providers_bp.add_dish"))   
         else:
             # return redirect(url_for("providers_bp.add_dish"))             
-            return render_template("providers_add_dish.html",form_d=form_d,form_restrict=form_restrict)
+            return render_template("providers_add_dish.html",form_d=form_d,form_restrict=form_restrict, form_cat=form_cat)
     else:
-        flash(f"Error getting data for the url. {p[1]}", 'failure_bkg')
+        flash(f"""Error getting data for the url. p:{p[1]}
+              m: {m[1]}
+              restrictions: {all_restrict[1]}
+              categories: {all_categories[1]}""", 'failure_bkg')
         return redirect(url_for("providers_bp.add_dish"))
 
 

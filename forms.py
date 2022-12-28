@@ -11,7 +11,7 @@ class PasswordSetForm(FlaskForm):
     
 class UserRegisterForm(FlaskForm):
     email=EmailField("Email", validators=[InputRequired(), Email()],id="email")
-    user_type=RadioField("You are a: ",choices=[('provider','Provider'),('school','School')], default='provider')
+    user_type=RadioField("You are a: ",choices=[('provider','Provider'),('school','School'),('parent','Parent')], default='provider')
     school_name=StringField("Name of School ", id="schoolName")
     
 class LoginForm(FlaskForm):
@@ -62,11 +62,11 @@ class CategoryForm(FlaskForm):
 class DishInfoForm(FlaskForm):
     name=StringField("Name of dish", validators=[InputRequired()])
     recipe=TextAreaField("Recipe for nutrition calculation")
-    num_servings=IntegerField("How many servings does this dish have?",validators=[NumberRange(min=0),Optional(strip_whitespace=True)])
+    num_servings=IntegerField("How many servings is this recipe?",validators=[NumberRange(min=0),Optional(strip_whitespace=True)])
     ingred_disp=TextAreaField("Recipe to display")
     price=DecimalField("Price per serving", validators=[NumberRange(min=0),Optional(strip_whitespace=True)])
     sales_pitch=TextAreaField("What is special about your dish? Sell it here!")
-    pass_guidelines=BooleanField("Pass ministry guidelines")
+    pass_guidelines=BooleanField("Pass ministry guidelines", id="guidelines")
     max_meals=IntegerField("Maximum number of servings of this dish you can provide for one organization at one time",validators=[NumberRange(min=0), Optional(strip_whitespace=True)])
     related_to_dish=SelectField("Related to dish")
     active=BooleanField("Active")

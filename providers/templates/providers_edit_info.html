@@ -6,13 +6,13 @@
 <h1>Edit Provider Information</h1>
 
 <form action="{{url_for('providers_bp.save_info')}}" id="providerEditForm" method="POST" autocomplete="off"
-    autocomplete="chrome-off">
+    autocomplete="chrome-off" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     <p>
         {{form.active.label}}: {{form.active}}
     </p>
     <p>
-        {{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
+        *{{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
     </p>
     <p><span>Please select from autocomplete. This will ensure our search feature will work. </span><br>
         {{form.address.label}}:
@@ -122,6 +122,10 @@
             </tbody>
         </table>
     </fieldset>
+    <p>
+        *Upload your inspection report. It must be issued within 10 months of today's date
+        <input type="file" name="inspectionFile" id="inspectionFile"><span id="inspectionFileError"></span>
+    </p>
     <ul>
 
         {% for field,error in form.errors.items() %}
@@ -130,10 +134,10 @@
         {% endfor%}
     </ul>
 
-
     <button id="submit">Save</button>
+    <button id="reviewBtn">Submit for review</button>
 
-    <p><button id="deleteAcct" class="modalTrigger">Delete Account</button></p>
+    <p><button id="deleteAcct" class="modalTrigger">Delete Account - doesn't work</button></p>
     <div class="modal">
         <div class="modal-content">
             <span class="close-button">X</span>
@@ -147,6 +151,7 @@
     {{ form.hidden_tag() }}
     <button>Delete Profile Permanently</button>
 </form>
+
 
 {% endblock %}
 {% block scripts%}

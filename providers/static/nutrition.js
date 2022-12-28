@@ -37,12 +37,12 @@ const RESPONSE = {
         },
         "FAT": {
             "label": "Total lipid (fat)",
-            "quantity": 15.213003686360159,
+            "quantity": 2.213003686360159,
             "unit": "g"
         },
         "FASAT": {
             "label": "Fatty acids, total saturated",
-            "quantity": 4.693550129711643,
+            "quantity": 1.693550129711643,
             "unit": "g"
         },
         "FATRN": {
@@ -97,7 +97,7 @@ const RESPONSE = {
         },
         "NA": {
             "label": "Sodium, Na",
-            "quantity": 1279.479096,
+            "quantity": 200.479096,
             "unit": "mg"
         },
         "CA": {
@@ -1214,21 +1214,21 @@ const RESPONSE = {
     }
 }
 
-console.log('fat ' + RESPONSE.totalNutrients.FAT.quantity)
-console.log('saturated fat ' + RESPONSE.totalNutrients.FASAT.quantity)
-console.log('trans fat ' + RESPONSE.totalNutrients.FATRN.quantity)
-console.log('energy ' + RESPONSE.totalNutrients.ENERC_KCAL.quantity)
-console.log('fiber ' + RESPONSE.totalNutrients.FIBTG.quantity)
-console.log('protein ' + RESPONSE.totalNutrients.PROCNT.quantity)
-console.log('sodium ' + RESPONSE.totalNutrients.NA.quantity)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].food)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].quantity)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].measure)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].weight + 'g')
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].food)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].quantity)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].measure)
-console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].weight + 'g')
+// console.log('fat ' + RESPONSE.totalNutrients.FAT.quantity)
+// console.log('saturated fat ' + RESPONSE.totalNutrients.FASAT.quantity)
+// console.log('trans fat ' + RESPONSE.totalNutrients.FATRN.quantity)
+// console.log('energy ' + RESPONSE.totalNutrients.ENERC_KCAL.quantity)
+// console.log('fiber ' + RESPONSE.totalNutrients.FIBTG.quantity)
+// console.log('protein ' + RESPONSE.totalNutrients.PROCNT.quantity)
+// console.log('sodium ' + RESPONSE.totalNutrients.NA.quantity)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].food)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].quantity)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].measure)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[0].weight + 'g')
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].food)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].quantity)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].measure)
+// console.log('ingred ' + RESPONSE.ingredients[0].parsed[1].weight + 'g')
 // console.log('food ' + ingredients[0].food)
 // console.log('quantity ' + ingredients[0].quantity)
 // console.log('measure ' + ingredients[0].measure)
@@ -1238,34 +1238,43 @@ document.querySelector("#analyze").addEventListener("click", getNutrition)
 async function getNutrition(e) {
     e.preventDefault()
     try {
-        const ingr = encodeURIComponent(document.querySelector("#recipe").value.replaceAll("\n", " and "))
-        // call axios to get info from db
-        const RESPONSE = await axios.get(`${EDAMAM_API}/api/nutrition-data?app_id=0b4f0367&app_key=ad95ab4c4d78064dfa5d69506156ef1d&ingr=${ingr}`)
+        if (document.querySelector("#recipe").value.trim() != "") {
+            const ingr = encodeURIComponent(document.querySelector("#recipe").value.replaceAll("\n", " and "))
+            // call axios to get info from db
+            // const RESPONSE = await axios.get(`${EDAMAM_API}/api/nutrition-data?app_id=0b4f0367&app_key=ad95ab4c4d78064dfa5d69506156ef1d&ingr=${ingr}`)
 
-        console.log(RESPONSE.data)
-        console.log('fat ' + RESPONSE.data.totalNutrients.FAT.quantity)
-        console.log('saturated fat ' + RESPONSE.data.totalNutrients.FASAT.quantity)
-        console.log('trans fat ' + RESPONSE.data.totalNutrients.FATRN.quantity)
-        console.log('energy ' + RESPONSE.data.totalNutrients.ENERC_KCAL.quantity)
-        console.log('fiber ' + RESPONSE.data.totalNutrients.FIBTG.quantity)
-        console.log('protein ' + RESPONSE.data.totalNutrients.PROCNT.quantity)
-        console.log('sodium ' + RESPONSE.data.totalNutrients.NA.quantity)
-        console.log('# of ingred ' + RESPONSE.data.ingredients[0].parsed.length)
-        console.log('food ' + RESPONSE.data.ingredients[0].parsed[0].food)
+            console.log(RESPONSE)
+            // console.log('fat ' + RESPONSE.data.totalNutrients.FAT.quantity)
+            // console.log('saturated fat ' + RESPONSE.data.totalNutrients.FASAT.quantity)
+            // console.log('trans fat ' + RESPONSE.data.totalNutrients.FATRN.quantity)
+            // console.log('energy ' + RESPONSE.data.totalNutrients.ENERC_KCAL.quantity)
+            // console.log('fiber ' + RESPONSE.data.totalNutrients.FIBTG.quantity)
+            // console.log('protein ' + RESPONSE.data.totalNutrients.PROCNT.quantity)
+            // console.log('sodium ' + RESPONSE.data.totalNutrients.NA.quantity)
+            // console.log('# of ingred ' + RESPONSE.data.ingredients[0].parsed.length)
+            // console.log('food ' + RESPONSE.data.ingredients[0].parsed[0].food)
 
-        console.log('quantity ' + RESPONSE.data.ingredients[0].parsed[0].quantity)
-        console.log('measure ' + RESPONSE.data.ingredients[0].parsed[0].measure)
-        console.log('weight ' + RESPONSE.data.ingredients[0].parsed[0].weight + 'g')
-        console.log('food ' + RESPONSE.data.ingredients[0].parsed[1].food)
-        console.log('quantity ' + RESPONSE.data.ingredients[0].parsed[1].quantity)
-        console.log('measure ' + RESPONSE.data.ingredients[0].parsed[1].measure)
-        console.log('weight ' + RESPONSE.data.ingredients[0].parsed[1].weight + 'g')
+            // console.log('quantity ' + RESPONSE.data.ingredients[0].parsed[0].quantity)
+            // console.log('measure ' + RESPONSE.data.ingredients[0].parsed[0].measure)
+            // console.log('weight ' + RESPONSE.data.ingredients[0].parsed[0].weight + 'g')
+            // console.log('food ' + RESPONSE.data.ingredients[0].parsed[1].food)
+            // console.log('quantity ' + RESPONSE.data.ingredients[0].parsed[1].quantity)
+            // console.log('measure ' + RESPONSE.data.ingredients[0].parsed[1].measure)
+            // console.log('weight ' + RESPONSE.data.ingredients[0].parsed[1].weight + 'g')
 
-        // display section
-        document.querySelector("#analyzeResults").classList.toggle("hide")
-        displayAPIResults(RESPONSE.data)
+            // display section
+            // document.querySelector("#analyzeResults").classList.toggle("hide")
+            // displayAPIResults(RESPONSE.data)
+            let guideline = checkGuidelines(RESPONSE)
+
+            if (guideline) {
+                document.querySelector("#guidelines").checked = true
+            } else {
+                document.querySelector("#guidelines").checked = false
+            }
+        }
     } catch (e) {
-        console.log('error in getting string')
+        console.log('error in getting string', e)
     }
 
 }
@@ -1303,4 +1312,60 @@ function displayAPIResults(res) {
     table.appendChild(tblBody)
     tableDiv.appendChild(table)
     return table
+}
+
+function checkGuidelines(res) {
+    // all guidelines are less than or equal to except for fiber and protein which is greater than or equal to
+    const ENTREE_FAT = 10 // in g
+    const ENTREE_SAT_FAT = 5 // in g
+    const ENTREE_FIBER = 2 // in g
+    const ENTREE_PROTEIN = 10 // in g
+    const ENTREE_SODIUM = 960 // in mg
+
+    const SIDE_FAT = 5 // in g
+    const SIDE_SAT_FAT = 2 // in g
+    const SIDE_FIBER = 2 // greater than or equal to in g
+    const SIDE_SODIUM = 360 // in mg
+
+    const SOUP_FAT = 3 // in g
+    const SOUP_FIBER = 2 // in g
+    const SOUP_SODIUM = 720 // in mg
+
+
+
+    // console.log('fat ' + res.totalNutrients.FAT.quantity)
+    // console.log('saturated fat ' + res.totalNutrients.FASAT.quantity)
+    // console.log('fiber ' + res.totalNutrients.FIBTG.quantity)
+    // console.log('protein ' + res.totalNutrients.PROCNT.quantity)
+    // console.log('sodium ' + res.totalNutrients.NA.quantity)
+
+    // what kind of dish is this, 1 is entree, 2 is side 3 is soup
+    const DISH = document.querySelector('input[name="categories"]:checked').value
+    let selectedDish = ''
+    if (DISH == 1) {
+        selectedDish = 'ENTREE'
+    } else if (DISH == 2) {
+        selectedDish = 'SIDE'
+    } else {
+        selectedDish = 'SOUP'
+    }
+
+    // check if recipe follows guidelines
+    if (res.totalNutrients.FAT.quantity <= eval(`${selectedDish}_FAT`) &&
+        res.totalNutrients.FIBTG.quantity >= eval(`${selectedDish}_FIBER`) &&
+        res.totalNutrients.NA.quantity <= eval(`${selectedDish}_SODIUM`)) {
+        console.log('passed 1s')
+        if (DISH == 3) {
+            return true
+        } else if (DISH == 2 && res.totalNutrients.FASAT.quantity <= eval(`${selectedDish}_SAT_FAT`)) {
+            return true
+        } else if (DISH == 1 && res.totalNutrients.FASAT.quantity <= eval(`${selectedDish}_SAT_FAT`) &&
+            res.totalNutrients.PROCNT.quantity >= eval(`${selectedDish}_PROTEIN`)) {
+            return true
+        } else {
+            return false
+        }
+    } else {
+        return false
+    }
 }

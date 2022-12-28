@@ -12,9 +12,18 @@
     <p>
         {{form_d.name.label}} {{form_d.name}}
     </p>
+    <p>Please ensure category is correct as it will affect results
+        {% for c in form_cat.categories %}
+        {{c}}
+        {{c.label}}
+        {% endfor %}
+    </p>
     <p>
         {{form_d.recipe.label}} {{form_d.recipe}}
-        <button id="analyze">Analyze</button>
+    <p>
+        {{form_d.num_servings.label}} {{form_d.num_servings}}
+    </p>
+    <button id="analyze">Analyze</button>
     <div id="analyzeResults">
         <h5>results</h5>
         <div class="nutContainer">
@@ -31,9 +40,11 @@
 
     </div>
     </p>
+
     <p>
-        {{form_d.num_servings.label}} {{form_d.num_servings}}
+        {{form_d.pass_guidelines.label}}: {{form_d.pass_guidelines(disabled=True)}}
     </p>
+
     <p>
         {{form_d.ingred_disp.label}} {{form_d.ingred_disp}}
     </p>
@@ -50,9 +61,7 @@
     <p>
         {{form_d.related_to_dish.label}}: {{form_d.related_to_dish}}
     </p>
-    <p>
-        {{form_d.pass_guidelines.label}}: {{form_d.pass_guidelines}}
-    </p>
+
     <section>
         <fieldset>
             <legend>Allergens</legend>
