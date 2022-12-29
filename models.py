@@ -571,7 +571,7 @@ class Provider(db.Model):
     __tablename__='providers'
     
     def __repr__(self):
-        return f"""<id={self.user_id}, name={self.name}, 
+        return f"""<user_id={self.user_id}, name={self.name}, 
             website={self.website},
             address={self.address},
             city_id={self.city_id},
@@ -584,6 +584,10 @@ class Provider(db.Model):
             max_meals_per_day={self.max_meals_per_day}
             min_meals={self.min_meals},
             serve_num_org_per_day={self.serve_num_org_per_day},
+            inspection_report={self.inspection_report},
+            submit_inspection={self.submit_inspection},
+            reviewed={self.reviewed},
+            submit_inspection_date={self.submit_inspection_date},
             active={self.active}>
             """
     
@@ -607,6 +611,14 @@ class Provider(db.Model):
     max_meals_per_day=db.Column(db.String(50))
     min_meals=db.Column(db.String(50))
     serve_num_org_per_day=db.Column(db.String(50))
+    inspection_report=db.Column(db.String(200))
+    submit_inspection=db.Column(db.Boolean,
+                                nullable=False,
+                                default=False)
+    reviewed=db.Column(db.Boolean,
+                       nullable=False,
+                       default=False)
+    submit_inspection_date=db.Column(db.Date)
     active=db.Column(db.Boolean, 
                      nullable=False,
                      default=True)
@@ -630,11 +642,15 @@ class Provider(db.Model):
         except Exception as e:
             return (False,e)
 
+    @classmethod
+    def get_to_review(cls):
+        ps=Provider.query.filter_by(submit_inspection=True,reviewed=False).all()
+        return ps
    
     @classmethod
     def set_provider(cls, fp, id,p=None):
             
-        try:
+        # try:
              # change geocode to null if it is empty string
             if fp['geocode_lat']=='' or fp['geocode_lat'] is None:
                 geocode_lat=None
@@ -645,9 +661,24 @@ class Provider(db.Model):
             else:
                 geocode_long=Decimal(fp['geocode_long'])
             
+            if fp.get('inspection_report'):
+                inspection_report=fp['inspection_report']
+            else:
+                inspection_report=""
+                
+            if fp.get('submit_inspection'):
+                print('*******in model')
+                print(fp['submit_inspection'])
+                print(fp['submit_inspection_date'])
+                submit_inspection=fp['submit_inspection']
+                submit_inspection_date=fp['submit_inspection_date']
+            else:
+                submit_inspection=False
+                submit_inspection_date=""
             if p:
                 # there is data, so they are updating
                 p.name=fp['name']
+                p.website=fp['website']
                 p.address=fp['address']
                 p.city_id=fp['city_id']
                 p.province_id=fp['province_id']
@@ -660,13 +691,15 @@ class Provider(db.Model):
                 p.max_meals_per_day=fp['max_meals_per_day']
                 p.min_meals=fp['min_meals']
                 p.serve_num_org_per_day=fp['serve_num_org_per_day']
-            
-
+                p.inspection_report=inspection_report
+                p.submit_inspection=submit_inspection
+                p.submit_inspection_date=submit_inspection_date
             else:
   
                 # they are creating a record for the first time, make a new provider
                 p=Provider(user_id=id,
                            name=fp['name'],
+                           website=fp['website'],
                         address=fp['address'],
                         city_id=fp['city_id'],
                         province_id=fp['province_id'],
@@ -678,7 +711,11 @@ class Provider(db.Model):
                         geocode_long=geocode_long,
                         max_meals_per_day=fp['max_meals_per_day'],
                         min_meals=fp['min_meals'],
-                        serve_num_org_per_day=fp['serve_num_org_per_day']
+                        serve_num_org_per_day=fp['serve_num_org_per_day'],
+                        inspection_report=inspection_report,
+                        submit_inspection=submit_inspection,
+                        submit_inspection_date=submit_inspection_date
+                        
             )
 
             # also need to update email in user table
@@ -690,7 +727,7 @@ class Provider(db.Model):
             db.session.add(p)
             db.session.commit()
             return (True, p)
-        except Exception as e:
+        # except Exception as e:
             db.session.rollback()
             return (False,e)
 

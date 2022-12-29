@@ -129,6 +129,8 @@ def login():
                 return redirect(url_for('schools_bp.home'))
             elif u.user_type=='provider':
                 return redirect(url_for('providers_bp.home'))
+            elif u.user_type=='admin':
+                return redirect(url_for('admin_bp.home'))
         else:
             flash("Wrong credentials. Please contact help@fftsl.ca if you are having trouble logging in.", "failure_bkg")
             return render_template('login.html',form=form)
@@ -176,7 +178,7 @@ def check_is_provider(f):
             flash(f"You are not logged in.", "failure_bkg")
             return redirect(url_for('auth_bp.login'))
         else:
-            if not g.user.user_type=="provider":
+            if not g.user.user_type=="provider" and not g.user.user_type == "admin":
                 flash(f"You are not authorized to view this page {g.user.user_type}", "failure_bkg")
                 # save referrer in session
                 
@@ -192,7 +194,7 @@ def check_is_school(f):
             flash(f"You are not logged in.", "failure_bkg")
             return redirect(url_for('auth_bp.login'))
         else:
-            if not g.user.user_type=="school":
+            if not g.user.user_type=="school" and not g.user.user_type == "admin":
                 flash(f"You are not authorized to view this page {g.user.user_type}", "failure_bkg")
                 # save referrer in session
                 

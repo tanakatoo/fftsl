@@ -27,10 +27,11 @@ class ProviderInfoForm(FlaskForm):
     contact_name=StringField("Contact Name")
     phone=StringField("Phone Number")
     sales_pitch=TextAreaField("Sales pitch")
-    active=BooleanField("Account active", default=True)
+    active=BooleanField("Account active")
     geocode_lat=StringField("Latitude",id="geolat", validators=[Optional()])
     geocode_long=StringField("Longtitude", id="geolong", validators=[Optional()])
-    
+    submit_inspection=HiddenField(id='submit_inspection')
+    inspection_report=StringField("Inspection Report", id="inspection_report")
     max_meals_per_day=StringField("Maximum number of meals you can provide at one time to one organization")
     min_meals=StringField("Minimum number of meals you will provide to one organization")
     serve_num_org_per_day=StringField("How many organizations can you serve per day?")

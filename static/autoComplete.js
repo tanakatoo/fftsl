@@ -170,7 +170,11 @@ function completeAddress(id, showAddresses) {
     document.querySelector("#geolong").value = showAddresses[id].long
 }
 
-document.querySelector("#submit").addEventListener("click", (e) => {
+document.querySelector("#submit").addEventListener("click", validation)
+
+function validation(e) {
+    // remove all errors
+    removeErrors()
     // Check that the name is not empty
     if (document.querySelector("#name").value.trim() == "") {
         document.querySelector("#nameError").innerText = "Name cannot be blank."
@@ -186,4 +190,8 @@ document.querySelector("#submit").addEventListener("click", (e) => {
         document.querySelector("#geolong").value = null
     }
 
-})
+}
+
+function removeErrors() {
+    document.querySelector("#nameError").innerText = ""
+}

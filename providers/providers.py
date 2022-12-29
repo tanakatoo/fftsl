@@ -7,6 +7,7 @@ from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS, BASEDIR
 import os
 from werkzeug.utils import secure_filename
 from PIL import Image
+from datetime import date
 
 
 providers_bp = Blueprint('providers_bp', __name__,
@@ -186,8 +187,10 @@ def save_info():
             if form.validate_on_submit() and form_c.validate_on_submit() and form_days.validate_on_submit():
                 # write to database
                 # create an object to pass
+             
                 p_form={
                 'name':form.name.data,
+                'website':form.website.data,
                 'address':form.address.data,
                 'city_id':city_id,
                 'province_id':form.province_id.data,
@@ -202,6 +205,42 @@ def save_info():
                 'min_meals':form.min_meals.data,
                 'serve_num_org_per_day':form.serve_num_org_per_day.data
                 }
+
+                if(form.submit_inspection.data == "True"):
+                    print('*******in here')
+                    p_form['submit_inspection'] = True
+                    p_form['submit_inspection_date'] = date.today().strftime("%Y-%m-%d")
+                # save inspection report if there
+                file=False
+                path=''
+                if 'inspectionFile' in request.files:
+                    inspectionFile=request.files['inspectionFile']
+                    file_ext = os.path.splitext(inspectionFile.filename)[1]
+                    if file_ext in ALLOWED_EXTENSIONS:
+                        # fileName=secure_filename(inspectionFile.filename)
+                        fileName=str(g.user.id) + file_ext #make our own file name using userid
+                        path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
+                        inspectionFile.save(path)
+                        """Following code obtained from
+                        https://stackoverflow.com/questions/10607468/how-to-reduce-the-image-file-size-using-pil
+                        """
+                        photo = Image.open(path) #open the image and save a smaller version of it
+                        # photo = photo.resize((600,600))
+                        width, height = photo.size
+                        TARGET_WIDTH = 500
+                        coefficient = width / 500
+                        new_height = height / coefficient
+                        photo = photo.resize((int(TARGET_WIDTH),int(new_height)),Image.ANTIALIAS)
+                        photo.save(path,quality=50)
+                        """end of copied code"""
+                        file=(True,'saved')
+                        p_form['inspection_report']=fileName
+                    else: 
+                        file=(False,"not in extensions")
+                else:
+                    file=(True,'not submitted')
+                
+                
                 
                 res=Provider.set_provider(fp=p_form, id=g.user.id,p=p)
                 # need to save cuisines
@@ -228,24 +267,7 @@ def save_info():
                 # save specific dates
                 resdates=Date_avail.set_dates(id=g.user.id,add_dates=form.dates.data)
                 
-                # save inspection report
-                file=False
-                if 'inspectionFile' in request.files:
-                    inspectionFile=request.files['inspectionFile']
-                    
-                    if inspectionFile:
-                        file_ext = os.path.splitext(inspectionFile.filename)[1]
-                        if file_ext in ALLOWED_EXTENSIONS:
-                            # fileName=secure_filename(inspectionFile.filename)
-                            fileName=str(g.user.id) + file_ext #make our own file name using userid
-                            path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
-                            inspectionFile.save(path)
-                            photo = Image.open(path) #open the image and save a smaller version of it
-                            photo = photo.resize((600,600))
-                            photo.save(path)
-                            file=True
-                else:
-                    file=True
+                
                 
                 if res[0] and resc[0] and resd[0] and resdates[0] and file:
                     flash(f'Data saved!', 'success_bkg')

@@ -9,10 +9,13 @@
     autocomplete="chrome-off" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     <p>
-        {{form.active.label}}: {{form.active}}
+        {{form.active.label}}: {{form.active(disabled=True)}}
     </p>
     <p>
         *{{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
+    </p>
+    <p>{{form.website.label}}: {{form.website}}
+
     </p>
     <p><span>Please select from autocomplete. This will ensure our search feature will work. </span><br>
         {{form.address.label}}:
@@ -20,6 +23,12 @@
         <div class="autoAddress pointer">
         </div>
     </div>
+    </p>
+    <p>
+        {{form.geocode_lat.label}}: {{form.geocode_lat}}
+    </p>
+    <p>
+        {{form.geocode_long.label}}: {{form.geocode_long}}
     </p>
     <p>
         {{form.city_id.label}}: {{form.city_id}}
@@ -123,8 +132,10 @@
         </table>
     </fieldset>
     <p>
-        *Upload your inspection report. It must be issued within 10 months of today's date
-        <input type="file" name="inspectionFile" id="inspectionFile"><span id="inspectionFileError"></span>
+        *Upload your inspection report. It must be issued within 10 months of today's date<br>
+        <input type="file" name="inspectionFile" id="inspectionFile"
+            value="{% if form.inspection_report %}{{form.inspection_report}}{%endif%}"><span class="error"
+            id="inspectionFileError"></span>
     </p>
     <ul>
 
@@ -156,4 +167,5 @@
 {% endblock %}
 {% block scripts%}
 <script src="{{url_for('static',filename='autocomplete.js')}}"></script>
-<script src="{{url_for('static',filename='app.js')}}"></script>{% endblock%}
+<script src="{{url_for('static',filename='app.js')}}"></script>
+<script src="{{url_for('providers_bp.static',filename='providers.js')}}"></script>{% endblock%}

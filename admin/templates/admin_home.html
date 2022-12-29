@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block header_area %}
+<link rel="stylesheet" href="{{url_for('admin_bp.static',filename='admin_css.css')}}">{% endblock %}
+{% block title %}Admin Home{% endblock %}
+{% block content %}
+<h1>Providers to review</h1>
+<ul>
+    {% for p in ps %}
+    <li>{{p.name}} <img src="{{ p.inspection_report }}" alt="User Image">
+        <p>if pass:<br>
+            UPDATE providers SET reviewed=true WHERE user_id={{p.user_id}};<br>
+            UPDATE providers SET active=true WHERE user_id={{p.user_id}};
+
+        </p>
+        <p>if fail:<br>
+            UPDATE providers SET submit_inspection=false WHERE user_id={{p.user_id}};<br>
+            UPDATE providers SET submit_inspection_date=NULL WHERE user_id={{p.user_id}};
+
+        </p>
+    </li>
+
+    {% endfor %}
+</ul>
+{% block scripts %}
+<script src="{{url_for('admin_bp.static',filename='admin_js.js')}}"></script>{% endblock %}
+{% endblock %}

@@ -14,6 +14,7 @@ from general.general import general_bp
 from parents.parents import parents_bp
 from schools.schools import schools_bp
 from emails.emailing import email_bp
+from admin.admin import admin_bp
 
 
 app = Flask(__name__)
@@ -34,6 +35,7 @@ app.register_blueprint(auth_bp,url_prefix='/')
 app.register_blueprint(email_bp,url_prefix='/')
 app.register_blueprint(parents_bp, url_prefix='/parents')
 app.register_blueprint(schools_bp, url_prefix='/schools')
+app.register_blueprint(admin_bp, url_prefix='/admin')
 
 
 # global functions
