@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session
+from flask import Blueprint, render_template, request, session, flash
 from models import City
 
 # have to import the model for this here
@@ -22,3 +22,8 @@ def system_message():
     
     return render_template("message.html",msg=msg)
 
+def flash_error(msg):
+    return flash(msg, 'error')
+
+def flash_success(msg):
+    return flash(msg, 'success')

@@ -20,8 +20,7 @@ admin_bp = Blueprint('admin_bp', __name__,
 def home():
     # get all providers and find all of the ones with submit_inspection = true and reviewed=false
     ps=Provider.get_to_review()
-    print('************providers to review, why is id not available')
-    print(ps)
+
     for p in ps:
         p.inspection_report=os.path.join('/',UPLOAD_FOLDER, 'inspection',p.inspection_report)
     return render_template('admin_home.html', ps=ps)   

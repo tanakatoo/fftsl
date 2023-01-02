@@ -1,18 +1,20 @@
-from flask import Blueprint, render_template, g, redirect, url_for, session, flash, request
+from flask import Blueprint, render_template, g, redirect, url_for, session, request
 from auth.auth import check_login, check_is_provider
 from models import Provider, Province, City, Dish, Cuisine, Cuisine_Provider, Recurring_availability, Recurring_Day, Date_avail, Restriction,Restriction_Dish, Category
 from forms import ProviderInfoForm, DishInfoForm, CuisineForm, DaysForm, RestrictionForm, CategoryForm
 from util import register_new_city, set_city_choices,set_prov_choices
 from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS, BASEDIR
 import os
-from werkzeug.utils import secure_filename
 from PIL import Image
 from datetime import date
-
+from flask_cors import CORS
+from general.general import flash_error, flash_success
+from decimal import Decimal
 
 providers_bp = Blueprint('providers_bp', __name__,
     template_folder='templates', static_folder='static')
-    # static_folder='static', static_url_path='assets')
+
+# CORS(providers_bp)
 
 # all go to the root of this, which is defined in app.py ('/products')
 @providers_bp.route('/dashboard')
@@ -43,62 +45,17 @@ def home():
 
         return render_template("providers_home.html", p=p, city=city,province=province,email=g.user.email, m=m, menuDisable=menuDisable)
     else:
-        session['msg']=f"Sorry we couldn't find your information. Please contact help@fftsl.ca with the following error: {p[1]}"
-        return redirect(url_for('general_bp.system_message'))
+        if not p[0]:
+            flash_error(f'Trouble locating profile: {p[1]}')
+        if not m[0]:
+            flash_error(f'Trouble getting menu: {m[1]}')
+        return redirect(url_for('general_bp.home'))
 
 @providers_bp.route('/learn_more')
 def learn_more():
     return render_template('providers_learn_more.html')
 
-@providers_bp.route('/details', methods=['GET'])
-@check_login
-@check_is_provider
-def info_details():
-    p=Provider.get_provider(g.user.id) #get provider info 
-    pc=Cuisine_Provider.get_cuisines(g.user.id)
-    c=Cuisine.get_all_cuisines()
-    pd=Recurring_availability.get_days(id=g.user.id)
-    prov_dates=Date_avail.get_dates(id=g.user.id)
-    
-    if prov_dates[0] and c[0] and p[0] and pd[0] and pc[0]:
-        p=p[1]
-        pc=pc[1]
-        pd=pd[1]
-        c=c[1]
-        prov_dates=prov_dates[1]
-        
-        form_c=CuisineForm()
-        cuisines=[(cuisine.id,cuisine.name) for cuisine in c]
-        form_c.cuisines.choices=cuisines
-        checked_cuisines=[c.cuisine_id for c in pc]
-        form_c.cuisines.data=checked_cuisines
-        
-        province=Province.get_name(p.province_id)
-        city=City.get_name(p.city_id)
-        
-        if province[0] and city[0]:
-            province=province[1]
-            city=city[1]
-        else:
-            flash(f'''An error occured getting province and city name:
-              {province[1]}
-              {city[1]}''', 'failure_bkg')
-            return redirect(url_for('providers_bp.home'))
-       
-        return render_template("providers_details.html",p=p, prov=province,city=city,form_c=form_c,pd=pd,email=g.user.email, pc=pc,prov_dates=prov_dates)
-    else: 
-        flash(f'''An error occured getting data:
-              pc: {pc[1]}
-              pd: {pd[1]}
-              p: {p[1]}
-              prov_dates: {prov_dates[1]}''', 'failure_bkg')
-        return redirect(url_for('providers_bp.home'))
-        
-
-@providers_bp.route('/edit', methods=['GET'])
-@check_login
-@check_is_provider
-def edit_info():
+def get_info():
     p=Provider.get_provider(g.user.id) #get provider info 
     pc=Cuisine_Provider.get_cuisines(g.user.id) #get cuisine info related to provider
     all_provinces=set_prov_choices() #get list of all provinces
@@ -119,297 +76,280 @@ def edit_info():
         all_days=all_days[1]
         
         form=ProviderInfoForm(obj=p)
-        form_c=CuisineForm()
-        form_days=DaysForm()
-        
-        #populate the select fields with choices
         form.province_id.choices=all_provinces
+        form.city_id.choices=all_cities
         
-        form.city_id.choices=all_cities   
-        
+        form_c=CuisineForm()
         cuisines=[(cuisine.id,cuisine.name) for cuisine in c]
         form_c.cuisines.choices=cuisines
         checked_cuisines=[c.cuisine_id for c in pc]
-        form_c.cuisines.data=checked_cuisines
+        
                 
+        form_days=DaysForm()
         days=[(d.id,d.day) for d in all_days]
         form_days.days.choices=days
+                
+        return (True,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates)
+    else: 
+        if not pc[0]:
+            flash_error(f'Trouble getting selected cuisine(s): {pc[1]}')
+        if not c[0]:
+            flash_error(f'Trouble getting cuisine names: {c[1]}')
+        if not p[0]:
+            flash_error(f'Trouble getting profile: {p[1]}')
+        if not pd[0]:
+            flash_error(f'Trouble getting recurring availability: {pd[1]}')
+        if not all_provinces[0]:
+            flash_error(f'Trouble getting province names: {all_provinces[1]}')
+        if not all_cities[0]:
+            flash_error(f'Trouble getting city names: {all_cities[1]}')
+        if not prov_dates[0]:
+            flash_error(f'Trouble getting specific availability dates: {prov_dates[1]}')
+        if not all_days[0]:
+            flash_error(f'Trouble getting days of the week: {all_days[1]}')
+        
+        return (False,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates)
+        
+        
+    
+@providers_bp.route('/details', methods=['GET'])
+@check_login
+@check_is_provider
+def info_details():
+    data=get_info()
+         
+    if data[0]:
+        resp,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates=data
+        form_c.cuisines.data=checked_cuisines
+        province=Province.get_name(p.province_id)
+        city=City.get_name(p.city_id)
+        
+        form.display.data=p.display
+        # display the thumbnail of the report
+        p.inspection_report=path_to_file(p.inspection_report)
+        
+        if province[0] and city[0]:
+            province=province[1]
+            city=city[1]
+        else:
+            if not province[0]:
+                flash_error(f'Trouble getting province: {province[1]}')
+            if not city[0]:
+                flash_error(f'Trouble getting city: {city[1]}')
+            return redirect(url_for('providers_bp.home'))
+    
+        return render_template("providers_details.html",p=p, prov=province,city=city,form_c=form_c,pd=pd,email=g.user.email, pc=pc,prov_dates=prov_dates)
+    else:
+        # error getting info
+        # errors flashed in get_info function
+       return redirect(url_for('providers_bp.home'))
+
+def path_to_file(filename):
+        # display the thumbnail of the report
+        file_ext = os.path.splitext(filename)[1]
+        filename=os.path.join('/',UPLOAD_FOLDER, 'inspection',f'{g.user.id}-thumb{file_ext}')
+        return filename
+
+@providers_bp.route('/edit', methods=['GET'])
+@check_login
+@check_is_provider
+def edit_info():
+    data=get_info()
+    
+    if data[0]:
+        resp,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates=data
+    
+        form_c.cuisines.data=checked_cuisines
+        # display the thumbnail of the report 
+        
+        if form.inspection_report.data:
+            form.inspection_report.data=path_to_file(p.inspection_report)
         
         return render_template("providers_edit_info.html",pd=pd,form=form,form_days=form_days,form_c=form_c,email=g.user.email, prov_dates=prov_dates)
-    else: 
-        flash(f'''An error occured getting data:
-              pc: {pc[1]}
-              c: {c[1]}
-              p: {p[1]}
-              all_provinces: {all_provinces[1]}
-              all_cities: {all_cities[1]}''', 'failure_bkg')
+    else:
         return redirect(url_for('providers_bp.home'))
 
 @providers_bp.route('/save_info', methods=['POST'])
 @check_is_provider
 @check_login
 def save_info():
-        p=Provider.get_provider(g.user.id)
+    data=get_info()
+    
+    if not data[0]:        
+        # cannot get basic data, so we abort
+        return redirect(url_for('providers_bp.edit_info'))
+    
+    resp,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates=data
+    city=register_new_city(city_id=form.city_id.data,city_name=request.form.get('newCity'))
+    if city[0]:
+        city_id=city[1]
+    else:
+        #only flash message, we can continue saving the rest of the data
+        flash_error (f'Trouble saving city name: {city[1]}')
         
-        all_provinces=set_prov_choices()
-        all_cities=set_city_choices()
-        c=Cuisine.get_all_cuisines()
-        all_days=Recurring_Day.get_all_days()
+    if form.validate_on_submit() and form_c.validate_on_submit() and form_days.validate_on_submit():
         
-        if all_provinces[0] and all_cities[0] and p[0] and c[0] and all_days[0]:
-        # see if it has to register a new city
-            p=p[1]
-            c=c[1]
-            all_provinces=all_provinces[1]
-            all_cities=all_cities[1]
-            all_days=all_days[1]
-
-            form_days=DaysForm()
-            days=[(d.id,d.day) for d in all_days]
-            form_days.days.choices=days
-            
-            form=ProviderInfoForm()
-            form_c=CuisineForm()
-            
-            #populate the select fields with choices
-            form.province_id.choices=all_provinces
-            form.city_id.choices=all_cities   
-            cuisines=[(cuisine.id,cuisine.name) for cuisine in c]
-            form_c.cuisines.choices=cuisines
-            
-            city=register_new_city(city_id=form.city_id.data,city_name=request.form.get('newCity'))
-            if city[0]:
-                city_id=city[1]
-            else:
-                #only flash message, we can continue saving the rest of the data
-                flash (f'An error occured saving the city name: {city[1]}.  The city was not saved. Please contact help@fftsl.ca', 'failure_bkg')
-                
-            if form.validate_on_submit() and form_c.validate_on_submit() and form_days.validate_on_submit():
-                # write to database
-                # create an object to pass
-             
-                p_form={
-                'name':form.name.data,
-                'website':form.website.data,
-                'address':form.address.data,
-                'city_id':city_id,
-                'province_id':form.province_id.data,
-                'contact_name':form.contact_name.data,
-                'phone':form.phone.data,
-                'email':request.form['email'],
-                'sales_pitch':form.sales_pitch.data,
-                'active':form.active.data,
-                'geocode_lat': form.geocode_lat.data,
-                'geocode_long': form.geocode_long.data,
-                'max_meals_per_day':form.max_meals_per_day.data,
-                'min_meals':form.min_meals.data,
-                'serve_num_org_per_day':form.serve_num_org_per_day.data
-                }
-
-                if(form.submit_inspection.data == "True"):
-                    print('*******in here')
-                    p_form['submit_inspection'] = True
-                    p_form['submit_inspection_date'] = date.today().strftime("%Y-%m-%d")
-                # save inspection report if there
-                file=False
-                path=''
-                if 'inspectionFile' in request.files:
-                    inspectionFile=request.files['inspectionFile']
-                    file_ext = os.path.splitext(inspectionFile.filename)[1]
-                    if file_ext in ALLOWED_EXTENSIONS:
-                        # fileName=secure_filename(inspectionFile.filename)
-                        fileName=str(g.user.id) + file_ext #make our own file name using userid
-                        path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
-                        inspectionFile.save(path)
-                        """Following code obtained from
-                        https://stackoverflow.com/questions/10607468/how-to-reduce-the-image-file-size-using-pil
-                        """
-                        photo = Image.open(path) #open the image and save a smaller version of it
-                        # photo = photo.resize((600,600))
-                        width, height = photo.size
-                        TARGET_WIDTH = 500
-                        coefficient = width / 500
-                        new_height = height / coefficient
-                        photo = photo.resize((int(TARGET_WIDTH),int(new_height)),Image.ANTIALIAS)
-                        photo.save(path,quality=50)
-                        """end of copied code"""
-                        file=(True,'saved')
-                        p_form['inspection_report']=fileName
-                    else: 
-                        file=(False,"not in extensions")
-                else:
-                    file=(True,'not submitted')
-                
-                
-                
-                res=Provider.set_provider(fp=p_form, id=g.user.id,p=p)
-                # need to save cuisines
-                resc=Cuisine_Provider.set_cuisines(fc=form_c.cuisines.data,id=g.user.id)
-                
-                # save recurring availability
-                # parse it before passing it in
-                # this what it looks like coming in4:2022-12-16:2022-12-17,6:2022-12-16:2022-12-17
-                # we need to pass it a list of [{provider_id:XX, recurring_day_id:XX, start_date:XX,end_date:xx}]
-                list_of_recurring_days=form.recurring_dates.data.split(',')
-                
-                recurring_days_to_db=[]
-                # now we have 4:2022-12-16:2022-12-17
-                for d in list_of_recurring_days:
-                    if not d == "":
-                        list_of_data=d.split(':')
-                        data={'provider_id':g.user.id,
-                            'recurring_day_id': list_of_data[0],
-                            'start_date': list_of_data[1],
-                            'end_date':list_of_data[2]}
-                        recurring_days_to_db.append(data)
-                
-                resd=Recurring_availability.set_days(id=g.user.id,fd=recurring_days_to_db)
-                # save specific dates
-                resdates=Date_avail.set_dates(id=g.user.id,add_dates=form.dates.data)
-                
-                
-                
-                if res[0] and resc[0] and resd[0] and resdates[0] and file:
-                    flash(f'Data saved!', 'success_bkg')
-                else:
-                    flash (f'''An error occured saving data: 
-                           provider:{res[1]}, 
-                           cuisine: {resc[1]},
-                           recurring_availability: {resd[1]},
-                           resdates: {resdates[1]},
-                           file: {file}.  Please contact help@fftsl.ca''', 'failure_bkg')
-
-                # have to get all the data again because the data was deleted from saving the data above, so the session doesn't have the newest info
-                
-                return redirect(url_for('providers_bp.edit_info'))
-            else:
-                flash(f'An error occured getting data: form:{form.errors}, form_cuisine:{form_c.errors}, form_day: {form_days.errors}', 'failure_bkg')
-                
-                return redirect(url_for('providers_bp.home'))
+         # change geocode to null if it is empty string
+        if form.geocode_lat.data=='' or form.geocode_lat.data is None:
+            geocode_lat=None
         else:
-            # validation failed
-           flash(f'''An error getting information p: {p[1]}, provinces: {all_provinces[1]}, 
-                 cities: {all_cities[1]}
-                 c: {c[1]},
-                 days: {all_days[1]}''')
-        return redirect(url_for("providers_bp.edit_info"))
+            geocode_lat=Decimal(form.geocode_lat.data)
+        if form.geocode_long.data=='' or form.geocode_long.data is None:
+            geocode_long=None
+        else:
+            geocode_long=Decimal(form.geocode_long.data)
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-# @providers_bp.route('/dishes/add', methods=['GET'])
-# @check_is_provider
-# @check_login
-# def add_dish_get():
-#     all_restrict=Restriction.get_all_restrict()
-#     m=Dish.get_menu(g.user.id)
+        if(form.submit_inspection.data == "True"):  
+
+            submit_inspection = True
+            submit_inspection_date= date.today().strftime("%Y-%m-%d")
+        else:
+            submit_inspection=False
+            submit_inspection_date=None
+        
+        # write to database
+        # create an object to pass
+        p_form={
+        'name':form.name.data,
+        'website':form.website.data,
+        'address':form.address.data,
+        'city_id':city_id,
+        'province_id':form.province_id.data,
+        'contact_name':form.contact_name.data,
+        'phone':form.phone.data,
+        'email':request.form['email'],
+        'sales_pitch':form.sales_pitch.data,
+        'active':form.active.data,
+        'display': form.display.data,
+        'geocode_lat': geocode_lat,
+        'geocode_long': geocode_long,
+        'max_meals_per_day':form.max_meals_per_day.data,
+        'min_meals':form.min_meals.data,
+        'serve_num_org_per_day':form.serve_num_org_per_day.data,
+        'submit_inspection': submit_inspection,
+        'submit_inspection_date': submit_inspection_date,
+        
+        }
+        
+            
+        
+        # save inspection report if there
+        file=False
+        path=''
+        if 'inspectionFile' in request.files:
+            inspectionFile=request.files['inspectionFile']
+            
+            if not inspectionFile.filename == '':
+                file_ext = os.path.splitext(inspectionFile.filename)[1]
+                if file_ext in ALLOWED_EXTENSIONS:
+                    # remove file if file was already there
+                    path_old = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',p.inspection_report)
+                    os.remove(path_old)
+                    file_ext_old = os.path.splitext(p.inspection_report)
+                    path_old = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',f'{file_ext_old[0]}-thumb{file_ext_old[1]}')
+                    os.remove(path_old)
+                    # fileName=secure_filename(inspectionFile.filename)
+                    fileName=str(g.user.id) + file_ext #make our own file name using userid
+                    path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
+                    inspectionFile.save(path)
+                    file=(True,'saved')
+                    p_form['inspection_report']=fileName
+                    p.inspection_report=fileName
+                    """Following code obtained from
+                    https://stackoverflow.com/questions/10607468/how-to-reduce-the-image-file-size-using-pil
+                    """
+                    # optimize photo for saving
+                    photo = Image.open(path) #open the image and save a smaller version of it
+                    width, height = photo.size
+                    TARGET_WIDTH = 500
+                    coefficient = width / 500
+                    new_height = height / coefficient
+                    photo = photo.resize((int(TARGET_WIDTH),int(new_height)),Image.ANTIALIAS)
+                    photo.save(path,quality=50)
+                    """end of copied code"""
+                    
+                    # save a small version of it for displaying on frontend
+                    thumb_pic=Image.open(path)
+                    fileName=f'{str(g.user.id)}-thumb{file_ext}'
+                    thumb_path=os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
+                    thumb_size=(75,75)
+                    thumb_pic.thumbnail(thumb_size)
+                    thumb_pic.save(thumb_path)
+                    
+                else: 
+                    file=(False,"not in extensions")
+            else:
+                file=(True,'not submitted')
+        else:
+            file=(True,'not submitted')
+        # if fp.get('inspection_report'):
+        #         p.inspection_report=fp['inspection_report']
+        # save provider info
+        res=Provider.set_provider(fp=p_form, id=g.user.id,p=p)
+        # save cuisines
+        resc=Cuisine_Provider.set_cuisines(fc=form_c.cuisines.data,id=g.user.id)
+        
+        """save recurring availability
+        parse it before passing it in
+        this what it looks like coming in 4:2022-12-16:2022-12-17,6:2022-12-16:2022-12-17
+        records separated by ',' and data by ':'
+        need to make it a list like: [{provider_id:XX, recurring_day_id:XX, start_date:XX,end_date:xx}]
+        """
+        list_of_recurring_days=form.recurring_dates.data.split(',')
+        
+        recurring_days_to_db=[]
+        # now we have 4:2022-12-16:2022-12-17
+        for d in list_of_recurring_days:
+            if not d == "":
+                list_of_data=d.split(':')
+                data={'provider_id':g.user.id,
+                    'recurring_day_id': list_of_data[0],
+                    'start_date': list_of_data[1],
+                    'end_date':list_of_data[2]}
+                recurring_days_to_db.append(data)
+        
+        resd=Recurring_availability.set_days(id=g.user.id,fd=recurring_days_to_db)
+        
+        # save specific dates
+        resdates=Date_avail.set_dates(id=g.user.id,add_dates=form.dates.data)  
+        
+        if res[0] and resc[0] and resd[0] and resdates[0] and file[0]:
+            flash_success(f'Data saved')
+        else:
+            if not res[0]:
+                flash_error(f'Trouble saving profile: {res[1]}')
+            if not resc[0]:
+                flash_error(f'Trouble saving cuisine: {resc[1]}')
+            if not resd[0]:
+                flash_error(f'Trouble saving recurring availability: {resd[1]}')
+            if not resdates[0]:
+                flash_error(f'Trouble saving specific availability dates: {resdates[1]}')
+            if not file[0]:
+                flash_error(f'Trouble saving file: {file[1]}')
+
+        return redirect(url_for('providers_bp.edit_info'))
+    else:
+        if not form.errors:
+            flash_error(f'Trouble saving profile data: {form.errors}')
+        if not form_c.errors:
+            flash_error(f'Trouble saving cuisine: {form_c.errors}')
+        if not form_days.errors:
+            flash_error(f'Trouble getting days of the week: {form_days.errors}')
+        
+        return redirect(url_for('providers_bp.home'))
     
-#     if all_restrict[0] and m[0]: # means there are no errors getting the info
-#         m=m[1]
-#         form_m=DishInfoForm(active=True)
-        
-#         all_restrict=all_restrict[1]
-#         form_restrict=RestrictionForm()
-#         restrictions=[(r.id,r.name) for r in all_restrict]
-#         form_restrict.restrictions.choices=restrictions
-        
-#         if m:
-#             # user can select which dish they want to link to (because we are adding a new dish)
-#             form_m.related_to_dish.choices=[("", "---")]+[(d.id, d.name) for d in m]
-#         else:
-#             form_m.related_to_dish.choices=[("", "---")]
-        
-#         #return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd, prov_dates=prov_dates)
-#         return render_template("providers_add_dish.html",form_m=form_m,form_restrict=form_restrict)
-            
-#     else:
-#         flash(f"Error getting data. m: {m[1]}, all_restrict:{all_restrict[1]}", 'failure_bkg')
-#         return redirect('/dashboard') 
+def get_empty_dish_info():
 
-
-# @providers_bp.route('/dishes/add', methods=["GET","POST"])
-# @check_is_provider
-# @check_login
-# def add_dish():
-#     # need provider_id, name of dish to save a dish
-#     p=Provider.get_provider(g.user.id)
-#     m=Dish.get_menu(g.user.id)
-#     all_restrict=Restriction.get_all_restrict()
-    
-#     if p[0] and m[0] and all_restrict[0]: #got provider
-#         p=p[1] 
-#         m=m[1]
-#         all_restrict=all_restrict[1]
-        
-#         form_d=DishInfoForm(active=True) 
-        
-#         if m:
-#             # user can select which dish they want to link to (because we are adding a new dish)
-#             form_d.related_to_dish.choices=[("", "---")]+[(d.id, d.name) for d in m]
-#         else:
-#             form_d.related_to_dish.choices=[("", "---")]
-            
-#         form_restrict=RestrictionForm()
-#         restrictions=[(r.id,r.name) for r in all_restrict]
-#         form_restrict.restrictions.choices=restrictions
-
-#         if form_d.validate_on_submit():
-#             # write to database
-#             # create an object to pass
-#             d_form={
-#                 'provider_id':g.user.id,
-#                 'name':form_d.name.data,
-#                 'recipe':form_d.recipe.data,
-#                 'num_servings':form_d.num_servings.data,
-#                 'ingred_disp':form_d.ingred_disp.data,
-#                 'price':form_d.price.data,
-#                 'sales_pitch':form_d.sales_pitch.data,
-#                 'max_meals':form_d.max_meals.data,
-#                 'related_to_dish':form_d.related_to_dish.data,
-#                 'pass_guidelines':form_d.pass_guidelines.data,
-#                 'active':form_d.active.data
-#             }
-           
-            
-#             res=Dish.insert_dish(fd=d_form)
-#             if res[0]:
-#                 # get dish id from here
-#                 id=res[1].id
-#                 #save restrictions
-#                 resrestrict=Restriction_Dish.set_restrictions(id=id,fr=form_restrict.restrictions.data)
-#                 if resrestrict[0]:
-#                     flash(f'Data saved!', 'success_bkg')
-#                     return redirect(url_for("providers_bp.home"))
-#                 else:
-#                     flash (f'An error occured saving restrictions data: {resrestrict[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
-#                     return redirect(url_for("providers_bp.add_dish"))
-#             else:
-#                     flash (f'An error occured saving dish data: {res[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
-#                     return redirect(url_for("providers_bp.add_dish"))   
-#         else:
-#             # return redirect(url_for("providers_bp.add_dish"))             
-#             return render_template("providers_add_dish.html",form_m=form_m,form_restrict=form_restrict)
-#     else:
-#         flash(f"Error getting data for the url. {p[1]}", 'failure_bkg')
-#         return redirect(url_for("providers_bp.add_dish"))
-
-@providers_bp.route('/dishes/add', methods=["GET","POST"])
-@check_is_provider
-@check_login
-def add_dish():
-    # need provider_id, name of dish to save a dish
-    p=Provider.get_provider(g.user.id)
     m=Dish.get_menu(g.user.id)
     all_restrict=Restriction.get_all_restrict()
     all_categories=Category.get_all_cat()
     
-    if p[0] and m[0] and all_restrict[0] and all_categories[0]: #got provider
-        p=p[1] 
+    if m[0] and all_restrict[0] and all_categories[0]:
         m=m[1]
         all_restrict=all_restrict[1]
         all_categories=all_categories[1]
         
-        form_d=DishInfoForm(active=True) 
+        form_d=DishInfoForm() 
         form_cat=CategoryForm()
         categories=[(c.id,c.name) for c in all_categories]
         form_cat.categories.choices=categories
@@ -425,6 +365,30 @@ def add_dish():
         restrictions=[(r.id,r.name) for r in all_restrict]
         form_restrict.restrictions.choices=restrictions
 
+        return (True,m,all_restrict,all_categories,form_d,form_cat,form_restrict)
+    
+    else:
+        if not m[0]:
+            flash_error(f"Error getting menu: {m[1]}")
+        if not all_restrict[0]:
+            flash_error(f"Error getting restrictions: {all_restrict[1]}")
+        if not all_categories[0]:
+            flash_error(f"Error getting dish categories: {all_categories[1]}")
+        return (False,m,all_restrict,all_categories,form_d,form_cat,form_restrict)
+        
+        
+@providers_bp.route('/dishes/add', methods=["GET","POST"])
+@check_is_provider
+@check_login
+def add_dish():
+    # need provider_id, name of dish to save a dish
+    p=Provider.get_provider(g.user.id)
+    data=get_empty_dish_info()
+
+    if p[0] and data[0]: 
+        p=p[1] 
+        resp,m,all_restrict,all_categories,form_d,form_cat,form_restrict=data
+    
         if form_d.validate_on_submit():
             # write to database
             # create an object to pass
@@ -436,6 +400,7 @@ def add_dish():
                 'ingred_disp':form_d.ingred_disp.data,
                 'price':form_d.price.data,
                 'sales_pitch':form_d.sales_pitch.data,
+                'category_id':form_cat.categories.data,
                 'max_meals':form_d.max_meals.data,
                 'related_to_dish':form_d.related_to_dish.data,
                 'pass_guidelines':form_d.pass_guidelines.data,
@@ -444,29 +409,67 @@ def add_dish():
            
             
             res=Dish.insert_dish(fd=d_form)
+            
             if res[0]:
                 # get dish id from here
                 id=res[1].id
                 #save restrictions
+                
                 resrestrict=Restriction_Dish.set_restrictions(id=id,fr=form_restrict.restrictions.data)
-                if resrestrict[0]:
-                    flash(f'Data saved!', 'success_bkg')
-                    return redirect(url_for("providers_bp.home"))
+                
+                 # save pic of dish if uploaded
+                file=False
+                path=''
+                if 'dishPic' in request.files:
+                    dishPic=request.files['dishPic']
+                    file_ext = os.path.splitext(dishPic.filename)[1]
+                    if file_ext in ALLOWED_EXTENSIONS:
+                        # fileName=secure_filename(inspectionFile.filename)
+                        fileName=f'{str(g.user.id)}-{id}{file_ext}' #make our own file name using userid
+                        path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'dishes',fileName)
+                        dishPic.save(path)
+                        """Following code obtained from
+                        https://stackoverflow.com/questions/10607468/how-to-reduce-the-image-file-size-using-pil
+                        """
+                        photo = Image.open(path) #open the image and save a smaller version of it
+                        # photo = photo.resize((600,600))
+                        width, height = photo.size
+                        TARGET_WIDTH = 500
+                        coefficient = width / 500
+                        new_height = height / coefficient
+                        photo = photo.resize((int(TARGET_WIDTH),int(new_height)),Image.ANTIALIAS)
+                        photo.save(path,quality=50)
+                        """end of copied code"""
+                        file=(True,'saved')
+                        d_form['dish_image']=fileName
+                        # return redirect(url_for("providers_bp.home"))
+                    else: 
+                        file=(False,"not in extensions")
+                        # return redirect(url_for("providers_bp.add_dish"))
                 else:
-                    flash (f'An error occured saving restrictions data: {resrestrict[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
-                    return redirect(url_for("providers_bp.add_dish"))
+                    file=(True,'not submitted')
+                    # return redirect(url_for("providers_bp.home"))
+                
+                if resrestrict[0] and file[0]:
+                    flash_success(f'Data saved')
+                    return redirect(url_for("providers_bp.home"))
+                    
+                else: 
+                    if not resrestrict[0]:
+                        flash_error (f'''Trouble saving restrictions: {resrestrict[1]}''')
+                    if not file[0]:
+                        flash_error (f'''Trouble saving file: {file[1]}''')
+                    return redirect(url_for("providers_bp.add_dish")) 
             else:
-                    flash (f'An error occured saving dish data: {res[1]}.  Please contact help@fftsl.ca', 'failure_bkg')
-                    return redirect(url_for("providers_bp.add_dish"))   
+                flash_error (f'Trouble saving dish information: {res[1]}')
+                return redirect(url_for("providers_bp.add_dish"))   
         else:
-            # return redirect(url_for("providers_bp.add_dish"))             
-            return render_template("providers_add_dish.html",form_d=form_d,form_restrict=form_restrict, form_cat=form_cat)
+            return redirect(url_for("providers_bp.add_dish"))             
+            # return render_template("providers_add_dish.html",form_d=form_d,form_restrict=form_restrict, form_cat=form_cat)
     else:
-        flash(f"""Error getting data for the url. p:{p[1]}
-              m: {m[1]}
-              restrictions: {all_restrict[1]}
-              categories: {all_categories[1]}""", 'failure_bkg')
-        return redirect(url_for("providers_bp.add_dish"))
+        if not p[0]:
+            flash_error(f"Trouble getting profile: {p[1]}")
+        return redirect(url_for('providers_bp.home'))
 
 
 @providers_bp.route('/dishes/<int:id>', methods=['GET'])
@@ -474,158 +477,138 @@ def add_dish():
 @check_login
 def view_dish(id):
     d=Dish.get_dish(id)
-    all_restrict=Restriction.get_all_restrict()
-   
-    if d[0] and all_restrict[0]: # means there are no errors getting the info
+    data=get_empty_dish_info()
+    
+    if d[0] and not d[1] is None and data[0]: 
         d=d[1]
-        all_restrict=all_restrict[1]
-        
+        resp,m, all_restrict,all_categories,form_d,form_cat,form_restrict=data
+        # get saved related to dish
         related_to_dish=""
         if d.related_to_dish:
             related_to_dish=Dish.get_name(d.related_to_dish)
             if related_to_dish[0]:
                 related_to_dish=related_to_dish[1]
             else:
-                flash(f'Error getting related dish name: {related_to_dish[1]}', 'failure_bkg')
+                flash_error(f'Trouble getting related dish name: {related_to_dish[1]}')
                 return redirect(url_for('providers_bp.home'))
         
+        # get saved category
+        category=Category.get_name(id=d.category_id)
+        if category[0]:
+            category=category[1]
+        else:
+            flash_error(f"""Trouble getting category of dish: {category[1]}""")
+
+        # get saved restrictions
         restrict=Restriction_Dish.get_restrictions(id=d.id)
         if restrict[0]:
             restrict=restrict[1]
         else:
-            flash(f'Error getting restrictions: {restrict[1]}', 'failure_bkg')
+            flash_error(f'Trouble getting restrictions: {restrict[1]}')
             return redirect(url_for('providers_bp.home'))
-        
-        form_restrict=RestrictionForm()
-        restrictions=[(r.id,r.name) for r in all_restrict]
-        form_restrict.restrictions.choices=restrictions
+      
         form_restrict.restrictions.data=[r.restriction_id for r in restrict]
-        
-        return render_template("providers_display_dish.html",related_to_dish=related_to_dish,d=d,form_restrict=form_restrict)
+
+        return render_template("providers_display_dish.html",category=category,related_to_dish=related_to_dish,d=d,form_restrict=form_restrict)
             
     else:
-        flash(f"Error getting data. m: d:{d[1]}, all_restrict: {all_restrict[1]}", 'failure_bkg')
+        if not d[0]:
+            flash_error(f"Trouble getting dish information: {d[1]}")
         return redirect(url_for('providers_bp.home')) 
-    
+
 # for editing - new
 @providers_bp.route('/dishes/<int:id>/edit', methods=['GET'])
 @check_is_provider
 @check_login
 def edit_dish(id):
     d=Dish.get_dish(id)
-    m=Dish.get_menu(g.user.id)
-    all_restrict=Restriction.get_all_restrict()
-    all_categories=Category.get_all_cat()
-   
-    if d[0] and m[0] and all_restrict[0] and all_categories[0]: # means there are no errors getting the info
+    
+    if d[0] and not d[1] is None: 
+        data=get_empty_dish_info()
         d=d[1]
-        all_restrict=all_restrict[1]
-        m=m[1]
-        all_categories=all_categories[1]
-        
+        if data[0]:
+            resp,m,all_restrict,all_categories,form_d,form_cat,form_restrict=data
+        else:
+            flash_error(f""" m: {m[1]}
+              restrictions: {all_restrict[1]}
+              categories: {all_categories[1]}""")
+            
         restrict=Restriction_Dish.get_restrictions(id=d.id)
         if restrict[0]:
             restrict=restrict[1]
         else:
-            flash(f'Error getting restrictions: {restrict[1]}', 'failure_bkg')
+            flash_error(f'Trouble getting restrictions: {restrict[1]}')
             return redirect(url_for('providers_bp.home'))
-        form=DishInfoForm(obj=d)
         
-        form_restrict=RestrictionForm()
-        restrictions=[(r.id,r.name) for r in all_restrict]
-        form_restrict.restrictions.choices=restrictions
+        form_d=DishInfoForm(obj=d)  #redefine and overwrite the existing form_d that is empty
         form_restrict.restrictions.data=[r.restriction_id for r in restrict]
-        
-        form_cat=CategoryForm()
-        categories=[(c.id,c.name) for c in all_categories]
-        form_cat.categories.choices=categories
-        form_cat.categories.data=[d.category_id]
-        
-        if m:
-            # user can select which dish they want to link to (because we are adding a new dish)
-            form.related_to_dish.choices=[("", "---")]+[(di.id, di.name) for di in m if not di.id is d.id]
-        else:
-            form.related_to_dish.choices=[("", "---")]
-        
-        #return render_template("providers_edit_menu.html",form_m=form_m,form_p=form_p,form_days=form_days,m=m, pd=pd, prov_dates=prov_dates)
-        return render_template("providers_edit_dish.html",form_cat=form_cat,form=form,form_restrict=form_restrict, id=d.id)
+        form_cat.categories.data=d.category_id
+        form_d,d=related_dish_dropdown(m,form_d,d)
+      
+        return render_template("providers_edit_dish.html",form_cat=form_cat,form_d=form_d,form_restrict=form_restrict, id=d.id)
             
     else:
-        #flash(f"Error getting data. {m[1]}, {p[1]}, {all_days[1]}, {pd[1]}", 'failure_bkg')
-        flash(f"Error getting data. m: {m[1]}, d:{d[1]}, all_restrict: {all_restrict[1]}", 'failure_bkg')
+        if not d[0]:
+            flash_error(f"""Trouble getting dish information: {d[1]}""")
         return redirect(url_for('providers_bp.home')) 
     
-
+def related_dish_dropdown(m,form_d,d):
+    if m:
+        # user can select which dish they want to link to (because we are adding a new dish)
+        form_d.related_to_dish.choices=[("", "---")]+[(di.id, di.name) for di in m if not di.id is d.id]
+    else:
+        form_d.related_to_dish.choices=[("", "---")]
+    return (form_d,d)
 
 @providers_bp.route('/dishes/<int:id>/edit', methods=["POST"])
 @check_is_provider
 @check_login
 def update_dish(id):
 
-    m=Dish.get_menu(g.user.id)
     d=Dish.get_dish(id)
-    all_restrict=Restriction.get_all_restrict()
-    all_categories=Category.get_all_cat()
-  
-    if m[0] and all_restrict[0] and d[0] and all_categories: # means there are no errors getting the info
-   
-        m=m[1] #could be a list
+    data=get_empty_dish_info()
+    
+    if d[0] and not d[1] is None and data[0]:
         d=d[1]
-        all_restrict=all_restrict[1]
-        all_categories=all_categories[1]
-        
-        form=DishInfoForm(obj=d) 
-        
-        form_restrict=RestrictionForm()
-        restrictions=[(r.id,r.name) for r in all_restrict]
-        form_restrict.restrictions.choices=restrictions
-
-        if m:
-            # user can select which dish they want to link to (because we are adding a new dish)
-            form.related_to_dish.choices=[("", "---")]+[(di.id, di.name) for di in m if not di.id is d.id]
-        else:
-            form.related_to_dish.choices=[("", "---")]
-            
-        
-        form_cat=CategoryForm()
-        categories=[(c.id,c.name) for c in all_categories]
-        form_cat.categories.choices=categories
-
-                
-        if form.validate_on_submit() and form_restrict.validate_on_submit() and form_cat.validate_on_submit():
+        resp,m, all_restrict,all_categories,form_d,form_cat,form_restrict=data
+        form_d=DishInfoForm(obj=d) #overwrite form with form that has data
+        form_d,d=related_dish_dropdown(m,form_d,d)
+                      
+        if form_d.validate_on_submit() and form_restrict.validate_on_submit() and form_cat.validate_on_submit():
             # write to database
             # create an object to pass
+
             d_form={
                 'provider_id':g.user.id,
-                'name':form.name.data,
-                'recipe':form.recipe.data,
-                'num_servings':form.num_servings.data,
-                'ingred_disp':form.ingred_disp.data,
-                'price':form.price.data,
-                'sales_pitch':form.sales_pitch.data,
-                'max_meals':form.max_meals.data,
-                'related_to_dish':form.related_to_dish.data,
-                'pass_guidelines':form.pass_guidelines.data,
-                'active':form.active.data
+                'name':form_d.name.data,
+                'recipe':form_d.recipe.data,
+                'num_servings':form_d.num_servings.data,
+                'ingred_disp':form_d.ingred_disp.data,
+                'category_id':form_cat.categories.data,
+                'price':form_d.price.data,
+                'sales_pitch':form_d.sales_pitch.data,
+                'max_meals':form_d.max_meals.data,
+                'related_to_dish':form_d.related_to_dish.data,
+                'pass_guidelines':form_d.pass_guidelines.data,
+                'active':form_d.active.data
             }
             
             res=d.update_dish(fd=d_form)
 
             #save restrictions
-            resrestrict=Restriction_Dish.set_restrictions(id=g.user.id,fr=form_restrict.restrictions.data)
+            resrestrict=Restriction_Dish.set_restrictions(id=d.id,fr=form_restrict.restrictions.data)
             if res[0] or resrestrict[0]:
-                flash(f'Data saved!', 'success_bkg')        
+                flash_success(f'Data saved')        
             else:
-                flash(f'''Error saving data:
-                      dish: {res[1]},
-                      restrictions: {resrestrict[1]}''', 'failure,bkg')
+                if not res[0]:
+                    flash_error(f'Trouble saving dish information: {res[1]}')
+                if not resrestrict[0]:
+                    flash_error(f'Trouble saving restrictions: {resrestrict[1]}')
         
         # return render_template("providers_edit_dish.html",form_cat=form_cat,form=form,form_restrict=form_restrict, id=d.id)
         return redirect(url_for("providers_bp.edit_dish", id=d.id))
             
     else:
-        #flash(f"Error getting data. {m[1]}, {p[1]}, {all_days[1]}, {pd[1]}", 'failure_bkg')
-        flash(f"Error getting data. m: {m[1]}, d:{d[1]}, all_restrict:{all_restrict[1]}", 'failure_bkg')
         return redirect(url_for('providers_bp.view_dish',id=id)) 
     
 # for editing - new
@@ -634,17 +617,17 @@ def update_dish(id):
 @check_login
 def delete_dish(id):
     d=Dish.get_dish(id)
-    if d[0]:
+    if d[0] and not d[1] is None:
         d=d[1]
         res=d.delete_dish()
         if res[0]:
-            flash(f'Dish deleted!', 'success_bkg')
+            flash_success(f'Dish deleted')
             return redirect(url_for('providers_bp.home'))
         else:
-            flash(f'Error deleting dish: {res[1]}', 'failure_bkg')
+            flash_error(f'Trouble deleting dish: {res[1]}')
             return redirect(url_for('providers_bp.edit_dish', id=id))
     else:
-        flash(f'Error getting dish data', 'failure_bkg')
+        flash_error(f'Trouble getting dish data: {d[1]}')
         return redirect(url_for('providers_bp.edit_dish', id=id))
     
 @providers_bp.route('/delete', methods=['POST'])
@@ -657,12 +640,12 @@ def delete_prov():
         p=p[1]
         res=p.delete()
         if res[0]:
-            flash(f'Profile deleted!', 'success_bkg')
+            flash_success(f'Sorry to see you go! Your profile has been deleted.')
             return redirect(url_for('general_bp.home'))
         else:
-            flash(f'Error deleting dish: {res[1]}', 'failure_bkg')
+            flash_error(f'Trouble deleting profile: {res[1]}')
             return redirect(url_for('providers_bp.edit_info'))
     else:
-        flash(f'Error getting provider data', 'failure_bkg')
+        flash_error(f'Trouble getting profile: {p[1]}')
         return redirect(url_for('providers_bp.edit_info'))
     

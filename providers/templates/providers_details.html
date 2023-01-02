@@ -10,6 +10,9 @@
     Active: {{p.active}}
 </p>
 <p>
+    Display for search: {{p.display}}
+</p>
+<p>
     Name: {{p.name}}
 </p>
 <p>Address: {{p.address}}
@@ -74,7 +77,7 @@
 </table>
 </p>
 
-<p>Set specific availability</p>
+<p>Specific availability</p>
 
 <table>
     <tbody id="datesTable" class="pointer">
@@ -88,6 +91,9 @@
         {%endfor%}
     </tbody>
 </table>
+<p>Submitted inspection report
+    <img src="{{ p.inspection_report }}" alt="Inspection report">
+</p>
 
 
 <button><a href="{{url_for('providers_bp.edit_info')}}">Edit</a></button>

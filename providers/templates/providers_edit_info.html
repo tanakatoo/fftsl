@@ -12,12 +12,16 @@
         {{form.active.label}}: {{form.active(disabled=True)}}
     </p>
     <p>
+        {{form.display.label}}: {{form.display}}
+    </p>
+    <p>
         *{{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
     </p>
     <p>{{form.website.label}}: {{form.website}}
 
     </p>
-    <p><span>Please select from autocomplete. This will ensure our search feature will work. </span><br>
+    <p><span>Please select from autocomplete or manually input a latitude and longitude if you wish to use the max
+            distance for delivery function.</span><br>
         {{form.address.label}}:
     <div class="typedAddress">{{form.address}}
         <div class="autoAddress pointer">
@@ -133,12 +137,15 @@
     </fieldset>
     <p>
         *Upload your inspection report. It must be issued within 10 months of today's date<br>
-        <input type="file" name="inspectionFile" id="inspectionFile"
-            value="{% if form.inspection_report %}{{form.inspection_report}}{%endif%}"><span class="error"
+        <input type="file" name="inspectionFile" id="inspectionFile"><span class=" error"
             id="inspectionFileError"></span>
     </p>
+    {%if form.inspection_report.data %}
+    <p>
+        Submitted file: <img id="submittedFile" src="{{ form.inspection_report.data }}" alt="Inspection report">
+    </p>
+    {%endif%}
     <ul>
-
         {% for field,error in form.errors.items() %}
 
         <li>{{field}},{{error}}</li>
@@ -167,5 +174,6 @@
 {% endblock %}
 {% block scripts%}
 <script src="{{url_for('static',filename='autocomplete.js')}}"></script>
-<script src="{{url_for('static',filename='app.js')}}"></script>
-<script src="{{url_for('providers_bp.static',filename='providers.js')}}"></script>{% endblock%}
+<script src="{{url_for('static',filename='recurring_dates.js')}}"></script>
+<script src="{{url_for('providers_bp.static',filename='providers.js')}}"></script>
+<script src="{{url_for('providers_bp.static',filename='validation.js')}}"></script>{% endblock%}

@@ -588,7 +588,8 @@ class Provider(db.Model):
             submit_inspection={self.submit_inspection},
             reviewed={self.reviewed},
             submit_inspection_date={self.submit_inspection_date},
-            active={self.active}>
+            active={self.active},
+            display={self.display}>
             """
     
     user_id= db.Column(db.Integer,
@@ -622,6 +623,9 @@ class Provider(db.Model):
     active=db.Column(db.Boolean, 
                      nullable=False,
                      default=True)
+    display=db.Column(db.Boolean,
+                      nullable=False,
+                      default=False)
     
     city=db.relationship("City", back_populates="provider")
     province=db.relationship("Province", back_populates="provider")
@@ -650,31 +654,8 @@ class Provider(db.Model):
     @classmethod
     def set_provider(cls, fp, id,p=None):
             
-        # try:
-             # change geocode to null if it is empty string
-            if fp['geocode_lat']=='' or fp['geocode_lat'] is None:
-                geocode_lat=None
-            else:
-                geocode_lat=Decimal(fp['geocode_lat'])
-            if fp['geocode_long']=='' or fp['geocode_lat'] is None:
-                geocode_long=None
-            else:
-                geocode_long=Decimal(fp['geocode_long'])
-            
-            if fp.get('inspection_report'):
-                inspection_report=fp['inspection_report']
-            else:
-                inspection_report=""
-                
-            if fp.get('submit_inspection'):
-                print('*******in model')
-                print(fp['submit_inspection'])
-                print(fp['submit_inspection_date'])
-                submit_inspection=fp['submit_inspection']
-                submit_inspection_date=fp['submit_inspection_date']
-            else:
-                submit_inspection=False
-                submit_inspection_date=""
+        try:
+       
             if p:
                 # there is data, so they are updating
                 p.name=fp['name']
@@ -686,14 +667,15 @@ class Provider(db.Model):
                 p.phone=fp['phone']
                 p.sales_pitch=fp['sales_pitch']
                 p.active=fp['active']
-                p.geocode_lat=geocode_lat
-                p.geocode_long=geocode_long
+                p.display=fp['display']
+                p.geocode_lat=fp['geocode_lat']
+                p.geocode_long=fp['geocode_long']
                 p.max_meals_per_day=fp['max_meals_per_day']
                 p.min_meals=fp['min_meals']
                 p.serve_num_org_per_day=fp['serve_num_org_per_day']
-                p.inspection_report=inspection_report
-                p.submit_inspection=submit_inspection
-                p.submit_inspection_date=submit_inspection_date
+                p.submit_inspection=fp['submit_inspection']
+                p.submit_inspection_date=fp['submit_inspection_date']
+
             else:
   
                 # they are creating a record for the first time, make a new provider
@@ -707,17 +689,16 @@ class Provider(db.Model):
                         phone=fp['phone'],
                         sales_pitch=fp['sales_pitch'],
                         active=fp['active'],
-                        geocode_lat=geocode_lat,
-                        geocode_long=geocode_long,
+                        geocode_lat=fp['geocode_lat'],
+                        geocode_long=fp['geocode_long'],
                         max_meals_per_day=fp['max_meals_per_day'],
                         min_meals=fp['min_meals'],
                         serve_num_org_per_day=fp['serve_num_org_per_day'],
-                        inspection_report=inspection_report,
-                        submit_inspection=submit_inspection,
-                        submit_inspection_date=submit_inspection_date
-                        
-            )
-
+                        submit_inspection=fp['submit_inspection'],
+                        submit_inspection_date=fp['submit_inspection_date']         
+                )
+            
+            
             # also need to update email in user table
             # get the user first
             u=User.query.get(id)
@@ -726,8 +707,11 @@ class Provider(db.Model):
             db.session.add(u)
             db.session.add(p)
             db.session.commit()
+            #need to refresh p as p has changed
+            db.session.refresh(p)
+
             return (True, p)
-        # except Exception as e:
+        except Exception as e:
             db.session.rollback()
             return (False,e)
 
@@ -797,6 +781,7 @@ class Dish(db.Model):
                               default=False)
     max_meals=db.Column(db.Integer)
     related_to_dish=db.Column(db.Integer)
+    dish_image=db.Column(db.String(200))
     active=db.Column(db.Boolean,
                      nullable=False,
                      default=True)
@@ -856,6 +841,7 @@ class Dish(db.Model):
             self.num_servings=num_servings
             self.ingred_disp=fd['ingred_disp']
             self.price=price
+            self.category_id=fd['category_id']
             self.sales_pitch=fd['sales_pitch']
             self.max_meals=max_meals
             self.related_to_dish=related_to_dish
@@ -899,6 +885,7 @@ class Dish(db.Model):
                         price=price,
                         sales_pitch=fd['sales_pitch'],
                         max_meals=max_meals,
+                        category_id=fd['category_id'],
                         related_to_dish=related_to_dish,
                         pass_guidelines=fd['pass_guidelines'],
                         active=fd['active']
@@ -1022,7 +1009,8 @@ class Cuisine_Provider(db.Model):
     
     @classmethod
     def set_cuisines(cls,id,fc):
-        try:
+        # try:
+            
             # fc is list of the cuisine IDs
             # delete all the records associated with user first
             Cuisine_Provider.query.filter_by(provider_id=id).delete()
@@ -1034,7 +1022,7 @@ class Cuisine_Provider(db.Model):
                 db.session.commit()
 
             return (True, fc)
-        except Exception as e:
+        # except Exception as e:
             db.session.rollback()
             return (False, e)
 
@@ -1073,6 +1061,9 @@ class Restriction(db.Model):
 class Restriction_Dish(db.Model):
     __tablename__='restrictions_dishes'
     
+    def __repr__(self):
+        return f"<dish_id={self.dish_id}, restriction_id={self.restriction_id}>"
+    
     dish_id= db.Column(db.Integer,
                         db.ForeignKey('dishes.id'),
                         primary_key=True)
@@ -1080,19 +1071,21 @@ class Restriction_Dish(db.Model):
                             db.ForeignKey('restrictions.id'),
                             primary_key=True)
     
+    
     @classmethod
     def get_restrictions(cls,id):
         try:
-            r=cls.query.filter_by(dish_id=id).all()
+            r=Restriction_Dish.query.filter_by(dish_id=id).all()
             return (True, r)
         except Exception as e:
             return (False, e)
     
     @classmethod
     def set_restrictions(cls,id,fr):
-        try:
+        # try:
             # fc is list of the restriction IDs
             # delete all the records associated with user first
+            
             Restriction_Dish.query.filter_by(dish_id=id).delete()
             db.session.commit()
             # then add all the records again
@@ -1102,13 +1095,16 @@ class Restriction_Dish(db.Model):
                 db.session.commit()
 
             return (True, fr)
-        except Exception as e:
+        # except Exception as e:
             db.session.rollback()
             return (False, e)
 
 
 class Restriction_School(db.Model):
     __tablename__='restrictions_schools'
+    
+    def __repr__(self):
+        return f"<school_id={self.school_id}, restriction_id={self.restriction_id}>"
     
     school_id= db.Column(db.Integer,
                         db.ForeignKey('schools.user_id'),
@@ -1120,7 +1116,7 @@ class Restriction_School(db.Model):
     @classmethod
     def get_restrictions(cls,id):
         try:
-            r=cls.query.filter_by(school_id=id).all()
+            r=Restriction_School.query.filter_by(school_id=id).all()
             return (True, r)
         except Exception as e:
             return (False, e)
@@ -1130,7 +1126,7 @@ class Restriction_School(db.Model):
         try:
             # fc is list of the restriction IDs
             # delete all the records associated with user first
-            cls.query.filter_by(school_id=id).delete()
+            Restriction_School.query.filter_by(school_id=id).delete()
             db.session.commit()
             # then add all the records again
             for fid in fr:

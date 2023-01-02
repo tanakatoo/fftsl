@@ -11,19 +11,39 @@
 </head>
 
 <body>
-    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% with errors = get_flashed_messages(category_filter=["error"]) %}
+    {% if errors %}
+    <div class="flash-message error">
+        <a class="close" href="#">×</a>
+        <p>
+            Oh snap! Is it you or us? Please contact help@fftsl.ca if you are having trouble:
+        </p>
+        <ul>
+            {%- for msg in errors %}
+            <li>{{ msg }}</li>
+            {% endfor -%}
+        </ul>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% with messages = get_flashed_messages(category_filter=["success"]) %}
     {% if messages %}
-    <section class="flash_messages">
-        {% for category, msg in messages %}
-        <p class="{{category}}">{{msg}}</p>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-    </section>
+    <div class="flash-message success">
+        <a class="close" href="#">×</a>
+        <ul>
+            {%- for msg in messages %}
+            <li>{{ msg }}</li>
+            {% endfor -%}
+        </ul>
+    </div>
+    {% endif %}
+    {% endwith %}
     <a href="/login">Login</a> <a href="/logout">Logout</a>
 
     {% block content %} {%endblock%}
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="{{url_for('static',filename='app.js')}}"></script>
     {% block scripts %} {%endblock%}
 </body>
 

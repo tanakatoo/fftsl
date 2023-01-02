@@ -1,15 +1,12 @@
-.success_bkg{
-    background-color: rgb(187, 255, 187);
-    color: green;
+.flash-message{
+    display: block;
 }
-
-.failure_bkg{
-    background-color: rgb(255, 177, 177);
-    color:rgb(255, 0, 0);
+.success{
+    background-color: #4BB543;
 }
 
 .error{
-    color: rgb(255, 0, 0);
+    background-color: #ff3333;
 }
 
 .hide{

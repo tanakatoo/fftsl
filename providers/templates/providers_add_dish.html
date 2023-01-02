@@ -6,87 +6,12 @@
 <h1>Add Menu Information</h1>
 
 <h3>Add dish</h3>
-<form id="menuEditForm" method="POST" action="{{url_for('providers_bp.add_dish')}}">
-    {{ form_d.hidden_tag() }}
-
-    <p>
-        {{form_d.name.label}} {{form_d.name}}
-    </p>
-    <p>Please ensure category is correct as it will affect results
-        {% for c in form_cat.categories %}
-        {{c}}
-        {{c.label}}
-        {% endfor %}
-    </p>
-    <p>
-        {{form_d.recipe.label}} {{form_d.recipe}}
-    <p>
-        {{form_d.num_servings.label}} {{form_d.num_servings}}
-    </p>
-    <button id="analyze">Analyze</button>
-    <div id="analyzeResults">
-        <h5>results</h5>
-        <div class="nutContainer">
-            <ul>
-                <li class="oneNut">
-                    <span class="label">Protein: <span id="protein">13%</span></span>
-                    <span class="bg-nut">
-                        <span class="nut-data" style="width: 13%"></span>
-                    </span>
-
-                </li>
-            </ul>
-        </div>
-
-    </div>
-    </p>
-
-    <p>
-        {{form_d.pass_guidelines.label}}: {{form_d.pass_guidelines(disabled=True)}}
-    </p>
-
-    <p>
-        {{form_d.ingred_disp.label}} {{form_d.ingred_disp}}
-    </p>
-    <p>
-        {{form_d.price.label}} {{form_d.price}}
-    </p>
-
-    <p>
-        {{form_d.sales_pitch.label}}: {{form_d.sales_pitch}}
-    </p>
-    <p>
-        {{form_d.max_meals.label}}{{form_d.max_meals}}
-    </p>
-    <p>
-        {{form_d.related_to_dish.label}}: {{form_d.related_to_dish}}
-    </p>
-
-    <section>
-        <fieldset>
-            <legend>Allergens</legend>
-            <p>Dish contains the following:</p>
-            {% for r in form_restrict.restrictions %}
-            {{r}}
-            {{r.label}}
-            {% endfor %}
-        </fieldset>
-    </section>
-    <p>
-        {{form_d.active.label}}: {{form_d.active}}
-    </p>
-    <ul>
-        {% for field in form_d %}
-        {% for error in field.error %}
-
-        <li>{{ error }}</li>
-        {%endfor%}
-    </ul>
-    {% endfor %}
-
-
+<form id="dishAddForm" method="POST" action="{{url_for('providers_bp.add_dish')}}">
+    {% include "add_edit_dish_partial.html" %}
     <button id="submit">Save</button>
 </form>
 {% endblock %}
 {% block scripts%}
-<script src="{{url_for('providers_bp.static',filename='nutrition.js')}}"></script> {% endblock%}
+<script src="{{url_for('providers_bp.static',filename='nutrition.js')}}"></script>
+<script src="{{url_for('providers_bp.static',filename='validation.js')}}"></script>
+<script src="{{url_for('providers_bp.static',filename='providers.js')}}"></script>{% endblock%}

@@ -37,7 +37,7 @@ const RESPONSE = {
         },
         "FAT": {
             "label": "Total lipid (fat)",
-            "quantity": 2.213003686360159,
+            "quantity": 10.213003686360159,
             "unit": "g"
         },
         "FASAT": {
@@ -1354,7 +1354,7 @@ function checkGuidelines(res) {
     if (res.totalNutrients.FAT.quantity <= eval(`${selectedDish}_FAT`) &&
         res.totalNutrients.FIBTG.quantity >= eval(`${selectedDish}_FIBER`) &&
         res.totalNutrients.NA.quantity <= eval(`${selectedDish}_SODIUM`)) {
-        console.log('passed 1s')
+
         if (DISH == 3) {
             return true
         } else if (DISH == 2 && res.totalNutrients.FASAT.quantity <= eval(`${selectedDish}_SAT_FAT`)) {

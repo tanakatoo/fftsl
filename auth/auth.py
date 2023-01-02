@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session,g
+from flask import Blueprint, render_template, request, redirect, url_for, session,g
 from functools import wraps
 from models import User, School
 from forms import PasswordResetForm, PasswordSetForm, LoginForm, UserRegisterForm
 from config import CURR_USER_KEY
+from general.general import flash_error,flash_success
 
 # have to import the model for this here
 
@@ -26,10 +27,10 @@ def reset_password():
             return redirect(url_for('email_bp.set_password_email',key=key,email=u.email))
         else:
             # u doens't exist or account has not yet been verified
-            flash("""Resetting your password failed. Either your email is not registered or you have not yet been verified.
+            flash_error('''Resetting your password failed. Either your email is not registered or you have not yet been verified.
                   Please signup first if you haven't registered, otherwise, please wait for our email
                   that will have a link for you to set your password if you have been verified as a legitimate business/school.
-                  """, "failure_bkg")
+                  ''')
             return render_template('forgot_password.html', form=form)
     else:
         return render_template('forgot_password.html', form=form)   
@@ -68,50 +69,38 @@ def set_password():
                     return render_template("set_password.html", form=form, email=u.email)
                 else:
                     # cannot find email
-                    flash("For some reason we couldn't find you registered in our system. Please contact help@fftsl.ca and we will get you sorted out.",'failure_bkg')
+                    flash_error("Email cannot be found. Please register before logging in.")
                     return redirect(url_for('general_bp.home'))
             else:
-                flash('Password set/reset has been expired. Please input email to obtain a new one', 'failure_bkg')
-                # session['msg']="For some reason we couldn't find you registered in our system. Please contact help@fftsl.ca and we will get you sorted out."
+                flash_error('Password set/reset is expired. Please input email to obtain a new one.')
                 return redirect(url_for('auth_bp.reset_password'))
         else:
             # code is incorrect
-            flash("The link you are trying to reach to reset your password is incorrect. Please contact help@fftsl.ca and we will get you sorted out.",'failure_bkg')
+            flash_error("Link to reset your password is incorrect. Please reset your password again.")
             return redirect(url_for('general_bp.home'))
 
 @auth_bp.route('/signup', methods=["GET","POST"])
 def signup():
     form=UserRegisterForm()
     if form.validate_on_submit():
-        try:
-            # when we can register parents, we need to add pwd to this
 
-            res=User.register(user_type=form.user_type.data,email=form.email.data)
-            if res[0]:
-                u=res[1]
-                if request.form['user_type'] == 'school':
-                    res=School.register(name=request.form['school_name'], user_id=u.id)
-                    
-                    if res[0]:
-                        s=res[1]
-                    else:
-                        flash(f'Sorry, the following error occurred while registering the school name. Please contact help@fftsl.ca. {res[1]}')
-                        return redirect(url_for('general_bp.home'))
-                    
-                if u:
-                    return redirect(url_for('email_bp.signup_email',user_type=request.form['user_type'],email=request.form['email'], school_name=request.form.get('school_name')))
-                else:
-                    flash('Not sure what happened in signup, but please contact help@fftsl.ca.', 'failure_bkg')
-                    return render_template('signup.html', form=form)
-            else:
-                # registration error
-                flash(f"Sorry the following error occurred while registering you. Please contact help@fftsl.ca. {res[1]}")
-                return redirect('/')
-        except Exception as e:
-            # error 
-            flash(f"Sorry the following error occurred while registering you. Please contact help@fftsl.ca. {res[1]}")
-            return redirect(url_for('general_bp.home'))
+        res=User.register(user_type=form.user_type.data,email=form.email.data)
+        if res[0]:
+            u=res[1]
+            if request.form['user_type'] == 'school':
+                res=School.register(name=request.form['school_name'], user_id=u.id)
+                
+                if not res[0]:
+                    flash_error(f'Trouble registering school name: {res[1]}')
+                    return redirect(url_for('general_bp.home'))
+
+            return redirect(url_for('email_bp.signup_email',user_type=request.form['user_type'],email=request.form['email'], school_name=request.form.get('school_name')))
             
+        else:
+            # registration error
+            flash_error(f"Trouble registering: {res[1]}")
+            return redirect('/')
+        
     else:
         return render_template('signup.html', form=form)
     
@@ -132,18 +121,17 @@ def login():
             elif u.user_type=='admin':
                 return redirect(url_for('admin_bp.home'))
         else:
-            flash("Wrong credentials. Please contact help@fftsl.ca if you are having trouble logging in.", "failure_bkg")
+            flash_error("Wrong credentials")
             return render_template('login.html',form=form)
     else:
 
-        print(session.get(CURR_USER_KEY))
         return render_template('login.html',form=form)
 
 @auth_bp.route('/logout')
 def logout():
     """Logout User"""
     do_logout()
-    flash("You have successfully logged out.", "success_bkg")
+    flash_success("You have successfully logged out.")
     return redirect(url_for('general_bp.home'))
 
 def do_login(id):
@@ -162,7 +150,7 @@ def check_login(f):
         if CURR_USER_KEY in session:
             g.user = User.get_user(id=session[CURR_USER_KEY])
         else:
-            flash("You need to login first", "failure_bkg")
+            flash_error("Please login.")
             g.user = None
             # save referrer in session
             
@@ -175,11 +163,11 @@ def check_is_provider(f):
     @wraps(f)
     def decorated_func(*args,**kws):
         if not CURR_USER_KEY in session:
-            flash(f"You are not logged in.", "failure_bkg")
+            flash_error(f"Please login.")
             return redirect(url_for('auth_bp.login'))
         else:
             if not g.user.user_type=="provider" and not g.user.user_type == "admin":
-                flash(f"You are not authorized to view this page {g.user.user_type}", "failure_bkg")
+                flash_error(f"{g.user.user_type.upper()} profiles are not authorized to view the requested page.")
                 # save referrer in session
                 
                 return redirect(url_for('general_bp.home'))
@@ -191,11 +179,11 @@ def check_is_school(f):
     @wraps(f)
     def decorated_func(*args,**kws):
         if not CURR_USER_KEY in session:
-            flash(f"You are not logged in.", "failure_bkg")
+            flash_error(f"Please login")
             return redirect(url_for('auth_bp.login'))
         else:
             if not g.user.user_type=="school" and not g.user.user_type == "admin":
-                flash(f"You are not authorized to view this page {g.user.user_type}", "failure_bkg")
+                flash_error(f"{g.user.user_type.upper()} profiles are not authorized to view the requested page.")
                 # save referrer in session
                 
                 return redirect(url_for('general_bp.home'))
@@ -207,11 +195,11 @@ def check_is_admin(f):
     @wraps(f)
     def decorated_func(*args,**kws):
         if not CURR_USER_KEY in session:
-            flash(f"You are not logged in.", "failure_bkg")
+            flash_error(f"Please login")
             return redirect(url_for('auth_bp.login'))
         else:
             if not g.user.user_type=="admin":
-                flash(f"You are not authorized to view this page {g.user.user_type}", "failure_bkg")
+                flash_error(f"{g.user.user_type.upper()} profiles are not authorized to view the requested page.")
                 # save referrer in session
                 
                 return redirect(url_for('general_bp.home'))

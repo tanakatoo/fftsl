@@ -37,6 +37,7 @@ class ProviderInfoForm(FlaskForm):
     serve_num_org_per_day=StringField("How many organizations can you serve per day?")
     dates=HiddenField(id="dates_avail")
     recurring_dates=HiddenField(id="recurring_dates")
+    display=BooleanField("Include in searches",id='display')
     # @classmethod
     # def add_cuisines_fields(cls, cform):
     #     cls.cuisines = FormField(cform)
