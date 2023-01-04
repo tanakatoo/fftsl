@@ -64,9 +64,13 @@
 </section>
 <p>
     Upload a picture of your dish<br>
-    <input type="file" name="dishPic" id="dishPic" value="{% if form.dishPic.data %}{{form.dishPic}}{%endif%}"><span
-        class="error" id="dishPicError"></span>
+    <input type="file" name="dishImage" id="dishImage"><span class="error" id="dishImageError"></span>
 </p>
+{%if form_d.dish_image.data %}
+<p>
+    Previously submitted image: <img id="submittedFile" src="{{ form_d.dish_image.data }}" alt="Image of Dish">
+</p>
+{%endif%}
 <p>
     {{form_d.active.label}}: {{form_d.active}}
 </p>

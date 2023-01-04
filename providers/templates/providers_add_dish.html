@@ -6,7 +6,7 @@
 <h1>Add Menu Information</h1>
 
 <h3>Add dish</h3>
-<form id="dishAddForm" method="POST" action="{{url_for('providers_bp.add_dish')}}">
+<form id="dishAddForm" method="POST" action="{{url_for('providers_bp.add_dish')}}" enctype="multipart/form-data">
     {% include "add_edit_dish_partial.html" %}
     <button id="submit">Save</button>
 </form>

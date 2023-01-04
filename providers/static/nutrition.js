@@ -37,7 +37,7 @@ const RESPONSE = {
         },
         "FAT": {
             "label": "Total lipid (fat)",
-            "quantity": 10.213003686360159,
+            "quantity": 7.213003686360159,
             "unit": "g"
         },
         "FASAT": {
@@ -1351,16 +1351,18 @@ function checkGuidelines(res) {
     }
 
     // check if recipe follows guidelines
-    if (res.totalNutrients.FAT.quantity <= eval(`${selectedDish}_FAT`) &&
-        res.totalNutrients.FIBTG.quantity >= eval(`${selectedDish}_FIBER`) &&
-        res.totalNutrients.NA.quantity <= eval(`${selectedDish}_SODIUM`)) {
+    // divide the result by the number of servings
+    num_servings = document.querySelector("#num_servings").value
+    if (res.totalNutrients.FAT.quantity / num_servings <= eval(`${selectedDish}_FAT`) &&
+        res.totalNutrients.FIBTG.quantity / num_servings >= eval(`${selectedDish}_FIBER`) &&
+        res.totalNutrients.NA.quantity / num_servings <= eval(`${selectedDish}_SODIUM`)) {
 
         if (DISH == 3) {
             return true
-        } else if (DISH == 2 && res.totalNutrients.FASAT.quantity <= eval(`${selectedDish}_SAT_FAT`)) {
+        } else if (DISH == 2 && res.totalNutrients.FASAT.quantity / num_servings <= eval(`${selectedDish}_SAT_FAT`)) {
             return true
-        } else if (DISH == 1 && res.totalNutrients.FASAT.quantity <= eval(`${selectedDish}_SAT_FAT`) &&
-            res.totalNutrients.PROCNT.quantity >= eval(`${selectedDish}_PROTEIN`)) {
+        } else if (DISH == 1 && res.totalNutrients.FASAT.quantity / num_servings <= eval(`${selectedDish}_SAT_FAT`) &&
+            res.totalNutrients.PROCNT.quantity / num_servings >= eval(`${selectedDish}_PROTEIN`)) {
             return true
         } else {
             return false

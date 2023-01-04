@@ -2,12 +2,8 @@ from flask import Blueprint, render_template, g, redirect, url_for, session, req
 from auth.auth import check_login, check_is_provider
 from models import Provider, Province, City, Dish, Cuisine, Cuisine_Provider, Recurring_availability, Recurring_Day, Date_avail, Restriction,Restriction_Dish, Category
 from forms import ProviderInfoForm, DishInfoForm, CuisineForm, DaysForm, RestrictionForm, CategoryForm
-from util import register_new_city, set_city_choices,set_prov_choices
-from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS, BASEDIR
-import os
-from PIL import Image
+from util import register_new_city, set_city_choices,set_prov_choices, save_image, path_to_file, remove_image
 from datetime import date
-from flask_cors import CORS
 from general.general import flash_error, flash_success
 from decimal import Decimal
 
@@ -90,7 +86,7 @@ def get_info():
         form_days.days.choices=days
                 
         return (True,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates)
-    else: 
+    else:   
         if not pc[0]:
             flash_error(f'Trouble getting selected cuisine(s): {pc[1]}')
         if not c[0]:
@@ -126,7 +122,8 @@ def info_details():
         
         form.display.data=p.display
         # display the thumbnail of the report
-        p.inspection_report=path_to_file(p.inspection_report)
+        if p.inspection_report and not p.inspection_report is None:
+            p.inspection_report=path_to_file(saved_file=p.inspection_report, folder='inspection')
         
         if province[0] and city[0]:
             province=province[1]
@@ -144,11 +141,7 @@ def info_details():
         # errors flashed in get_info function
        return redirect(url_for('providers_bp.home'))
 
-def path_to_file(filename):
-        # display the thumbnail of the report
-        file_ext = os.path.splitext(filename)[1]
-        filename=os.path.join('/',UPLOAD_FOLDER, 'inspection',f'{g.user.id}-thumb{file_ext}')
-        return filename
+
 
 @providers_bp.route('/edit', methods=['GET'])
 @check_login
@@ -163,7 +156,7 @@ def edit_info():
         # display the thumbnail of the report 
         
         if form.inspection_report.data:
-            form.inspection_report.data=path_to_file(p.inspection_report)
+            form.inspection_report.data=path_to_file(saved_file=p.inspection_report, folder='inspection')
         
         return render_template("providers_edit_info.html",pd=pd,form=form,form_days=form_days,form_c=form_c,email=g.user.email, prov_dates=prov_dates)
     else:
@@ -231,59 +224,10 @@ def save_info():
         
         }
         
-            
-        
-        # save inspection report if there
-        file=False
-        path=''
-        if 'inspectionFile' in request.files:
-            inspectionFile=request.files['inspectionFile']
-            
-            if not inspectionFile.filename == '':
-                file_ext = os.path.splitext(inspectionFile.filename)[1]
-                if file_ext in ALLOWED_EXTENSIONS:
-                    # remove file if file was already there
-                    path_old = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',p.inspection_report)
-                    os.remove(path_old)
-                    file_ext_old = os.path.splitext(p.inspection_report)
-                    path_old = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',f'{file_ext_old[0]}-thumb{file_ext_old[1]}')
-                    os.remove(path_old)
-                    # fileName=secure_filename(inspectionFile.filename)
-                    fileName=str(g.user.id) + file_ext #make our own file name using userid
-                    path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
-                    inspectionFile.save(path)
-                    file=(True,'saved')
-                    p_form['inspection_report']=fileName
-                    p.inspection_report=fileName
-                    """Following code obtained from
-                    https://stackoverflow.com/questions/10607468/how-to-reduce-the-image-file-size-using-pil
-                    """
-                    # optimize photo for saving
-                    photo = Image.open(path) #open the image and save a smaller version of it
-                    width, height = photo.size
-                    TARGET_WIDTH = 500
-                    coefficient = width / 500
-                    new_height = height / coefficient
-                    photo = photo.resize((int(TARGET_WIDTH),int(new_height)),Image.ANTIALIAS)
-                    photo.save(path,quality=50)
-                    """end of copied code"""
-                    
-                    # save a small version of it for displaying on frontend
-                    thumb_pic=Image.open(path)
-                    fileName=f'{str(g.user.id)}-thumb{file_ext}'
-                    thumb_path=os.path.join(BASEDIR, UPLOAD_FOLDER, 'inspection',fileName)
-                    thumb_size=(75,75)
-                    thumb_pic.thumbnail(thumb_size)
-                    thumb_pic.save(thumb_path)
-                    
-                else: 
-                    file=(False,"not in extensions")
-            else:
-                file=(True,'not submitted')
-        else:
-            file=(True,'not submitted')
-        # if fp.get('inspection_report'):
-        #         p.inspection_report=fp['inspection_report']
+         # save pic of dish if uploaded
+        file=save_image(form_file='inspectionFile', remove=True, folder='inspection', file_name=f'{str(g.user.id)}',file_name_old=p.inspection_report)
+                
+
         # save provider info
         res=Provider.set_provider(fp=p_form, id=g.user.id,p=p)
         # save cuisines
@@ -339,7 +283,6 @@ def save_info():
         return redirect(url_for('providers_bp.home'))
     
 def get_empty_dish_info():
-
     m=Dish.get_menu(g.user.id)
     all_restrict=Restriction.get_all_restrict()
     all_categories=Category.get_all_cat()
@@ -376,20 +319,22 @@ def get_empty_dish_info():
             flash_error(f"Error getting dish categories: {all_categories[1]}")
         return (False,m,all_restrict,all_categories,form_d,form_cat,form_restrict)
         
-        
+
 @providers_bp.route('/dishes/add', methods=["GET","POST"])
 @check_is_provider
 @check_login
 def add_dish():
     # need provider_id, name of dish to save a dish
     p=Provider.get_provider(g.user.id)
+    
     data=get_empty_dish_info()
-
+    
     if p[0] and data[0]: 
         p=p[1] 
         resp,m,all_restrict,all_categories,form_d,form_cat,form_restrict=data
-    
+        
         if form_d.validate_on_submit():
+            
             # write to database
             # create an object to pass
             d_form={
@@ -407,72 +352,50 @@ def add_dish():
                 'active':form_d.active.data
             }
            
-            
             res=Dish.insert_dish(fd=d_form)
             
             if res[0]:
                 # get dish id from here
-                id=res[1].id
+                d=res[1]
                 #save restrictions
                 
-                resrestrict=Restriction_Dish.set_restrictions(id=id,fr=form_restrict.restrictions.data)
+                resrestrict=Restriction_Dish.set_restrictions(id=d.id,fr=form_restrict.restrictions.data)
                 
-                 # save pic of dish if uploaded
-                file=False
-                path=''
-                if 'dishPic' in request.files:
-                    dishPic=request.files['dishPic']
-                    file_ext = os.path.splitext(dishPic.filename)[1]
-                    if file_ext in ALLOWED_EXTENSIONS:
-                        # fileName=secure_filename(inspectionFile.filename)
-                        fileName=f'{str(g.user.id)}-{id}{file_ext}' #make our own file name using userid
-                        path = os.path.join(BASEDIR, UPLOAD_FOLDER, 'dishes',fileName)
-                        dishPic.save(path)
-                        """Following code obtained from
-                        https://stackoverflow.com/questions/10607468/how-to-reduce-the-image-file-size-using-pil
-                        """
-                        photo = Image.open(path) #open the image and save a smaller version of it
-                        # photo = photo.resize((600,600))
-                        width, height = photo.size
-                        TARGET_WIDTH = 500
-                        coefficient = width / 500
-                        new_height = height / coefficient
-                        photo = photo.resize((int(TARGET_WIDTH),int(new_height)),Image.ANTIALIAS)
-                        photo.save(path,quality=50)
-                        """end of copied code"""
-                        file=(True,'saved')
-                        d_form['dish_image']=fileName
-                        # return redirect(url_for("providers_bp.home"))
-                    else: 
-                        file=(False,"not in extensions")
-                        # return redirect(url_for("providers_bp.add_dish"))
+                # save pic of dish if uploaded
+                
+                file=save_image(form_file='dishImage', remove=False, folder='dishes', file_name=f'{str(g.user.id)}-{d.id}')
+                
+                if file[0]:
+                    #if file was saved successfully, update the dish 
+                    d.dish_image=file[1]
+                    res_d=d.update_as_is(property='dish_image', data=file[1])
+                    
                 else:
-                    file=(True,'not submitted')
-                    # return redirect(url_for("providers_bp.home"))
+                    flash_error (f'''Trouble saving file: {file[1]}''')
+                    return redirect(url_for("providers_bp.add_dish")) 
                 
-                if resrestrict[0] and file[0]:
+                if resrestrict[0] and res_d[0]:
                     flash_success(f'Data saved')
                     return redirect(url_for("providers_bp.home"))
                     
                 else: 
                     if not resrestrict[0]:
                         flash_error (f'''Trouble saving restrictions: {resrestrict[1]}''')
-                    if not file[0]:
-                        flash_error (f'''Trouble saving file: {file[1]}''')
+                    if not res_d[0]:
+                        flash_error (f'''Trouble saving image name: {res_d[1]}''')    
                     return redirect(url_for("providers_bp.add_dish")) 
             else:
                 flash_error (f'Trouble saving dish information: {res[1]}')
                 return redirect(url_for("providers_bp.add_dish"))   
-        else:
-            return redirect(url_for("providers_bp.add_dish"))             
-            # return render_template("providers_add_dish.html",form_d=form_d,form_restrict=form_restrict, form_cat=form_cat)
+        else:        
+            return render_template("providers_add_dish.html",form_d=form_d,form_restrict=form_restrict, form_cat=form_cat)
     else:
         if not p[0]:
             flash_error(f"Trouble getting profile: {p[1]}")
         return redirect(url_for('providers_bp.home'))
 
 
-@providers_bp.route('/dishes/<int:id>', methods=['GET'])
+@providers_bp.route('/dishes/<int:id>', methods=['GET'])    
 @check_is_provider
 @check_login
 def view_dish(id):
@@ -509,6 +432,9 @@ def view_dish(id):
       
         form_restrict.restrictions.data=[r.restriction_id for r in restrict]
 
+        if d.dish_image and not d.dish_image is None:
+            d.dish_image=path_to_file(saved_file=d.dish_image, folder='dishes')
+            
         return render_template("providers_display_dish.html",category=category,related_to_dish=related_to_dish,d=d,form_restrict=form_restrict)
             
     else:
@@ -545,6 +471,9 @@ def edit_dish(id):
         form_cat.categories.data=d.category_id
         form_d,d=related_dish_dropdown(m,form_d,d)
       
+        if form_d.dish_image.data and not form_d.dish_image.data is None:
+            form_d.dish_image.data=path_to_file(saved_file=d.dish_image, folder='dishes')
+            
         return render_template("providers_edit_dish.html",form_cat=form_cat,form_d=form_d,form_restrict=form_restrict, id=d.id)
             
     else:
@@ -575,9 +504,13 @@ def update_dish(id):
         form_d,d=related_dish_dropdown(m,form_d,d)
                       
         if form_d.validate_on_submit() and form_restrict.validate_on_submit() and form_cat.validate_on_submit():
+            
+            # save pic of dish if uploaded
+            # file=save_image(form_file='dishImage', remove=True, folder='dishes', file_name=f'{str(g.user.id)}-{d.id}')
+            
             # write to database
             # create an object to pass
-
+            
             d_form={
                 'provider_id':g.user.id,
                 'name':form_d.name.data,
@@ -594,19 +527,40 @@ def update_dish(id):
             }
             
             res=d.update_dish(fd=d_form)
-
+            
             #save restrictions
             resrestrict=Restriction_Dish.set_restrictions(id=d.id,fr=form_restrict.restrictions.data)
-            if res[0] or resrestrict[0]:
-                flash_success(f'Data saved')        
-            else:
+            
+             # save pic of dish if uploaded
+             
+            file=save_image(form_file='dishImage', remove=True, folder='dishes', file_name=f'{str(g.user.id)}-{d.id}', file_name_old=d.dish_image)
+            if file[0] and not file[1]=='not submitted':
+                d.dish_image=file[1]
+                res_d=d.update_as_is(property='dish_image', data=file[1])
+                if not res_d[0]:
+                    flash_error (f'''Trouble saving image name: {res_d[1]}''')    
+            
+            if resrestrict[0] and file[0] and res[0]:
+                flash_success(f'Data saved')
+                return redirect(url_for("providers_bp.edit_dish", id=d.id))
+                
+            else: 
+                if not file[0]:
+                    flash_error (f'''Trouble saving image: {file[1]}''')    
                 if not res[0]:
                     flash_error(f'Trouble saving dish information: {res[1]}')
                 if not resrestrict[0]:
                     flash_error(f'Trouble saving restrictions: {resrestrict[1]}')
         
         # return render_template("providers_edit_dish.html",form_cat=form_cat,form=form,form_restrict=form_restrict, id=d.id)
-        return redirect(url_for("providers_bp.edit_dish", id=d.id))
+                return redirect(url_for("providers_bp.edit_dish", id=d.id))
+        else:
+            if not form_d.errors:
+                flash_error (f'''Trouble with dish form: {form_d.errors}''')    
+            if not form_restrict[0]:
+                flash_error(f'Trouble saving dish information: {form_restrict.errors}')
+            if not form_cat[0]:
+                flash_error(f'Trouble saving restrictions: {form_cat.errors}')
             
     else:
         return redirect(url_for('providers_bp.view_dish',id=id)) 
@@ -619,6 +573,12 @@ def delete_dish(id):
     d=Dish.get_dish(id)
     if d[0] and not d[1] is None:
         d=d[1]
+        # remove file if available
+        if d.dish_image and not d.dish_image is None:
+            res_image=remove_image(file_name_old=d.dish_image,folder='dishes')
+            if not res_image[0]:
+                flash_error(f'Trouble deleting image: {res_image[1]}')
+                
         res=d.delete_dish()
         if res[0]:
             flash_success(f'Dish deleted')
@@ -634,10 +594,21 @@ def delete_dish(id):
 @check_is_provider
 @check_login
 def delete_prov():
-    # get provider info
+    # get provider
     p=Provider.get_provider(g.user.id)
+
     if p[0]:
         p=p[1]
+        m=Dish.get_menu(g.user.id)
+        if m[0]:
+            m=m[1]
+            for d in m:
+                if d.dish_image and not d.dish_image is None:
+                    res_image=remove_image(file_name_old=d.dish_image,folder='dishes')
+                    if not res_image[0]:
+                        flash_error(f'Trouble deleting image: {res_image[1]}')
+        else:
+            flash_error(f'Trouble loading all the dishes: {m[1]}')
         res=p.delete()
         if res[0]:
             flash_success(f'Sorry to see you go! Your profile has been deleted.')

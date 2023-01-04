@@ -758,7 +758,8 @@ class Dish(db.Model):
             max_meals={self.max_meals},
             related_to_dish={self.related_to_dish},
             active={self.active},
-            pass_guidelines={self.pass_guidelines}>"""
+            pass_guidelines={self.pass_guidelines},
+            dish_image={self.dish_image}>"""
     
     id= db.Column(db.Integer,
                   primary_key=True,
@@ -767,8 +768,7 @@ class Dish(db.Model):
                           db.ForeignKey('providers.user_id'),
                           nullable=False)
     name=db.Column(db.String(200),
-                   nullable=False, 
-                   unique=True)
+                   nullable=False)
     category_id=db.Column(db.Integer,
                           db.ForeignKey('categories.id'))
     recipe=db.Column(db.Text)
@@ -814,6 +814,14 @@ class Dish(db.Model):
             return (True,d.name)
         except Exception as e:
             return (False,e)
+   
+    def update_as_is(self, property,data):
+        setattr(self,property,data)
+
+        db.session.add(self)
+        db.session.commit()
+        db.session.refresh(self)
+        return (True,self)
     
     def update_dish(self,fd):
         """update an existing dish"""
@@ -850,6 +858,7 @@ class Dish(db.Model):
             
             db.session.add(self)
             db.session.commit()
+            db.session.refresh(self)
             return (True, self)
         except Exception as e:
             db.session.rollback()

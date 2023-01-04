@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% block header_area %}
 <link rel="stylesheet" href="{{url_for('providers_bp.static',filename='providers_css.css')}}">{% endblock %}
-{% block title %}Provider Edit Menu{% endblock %}
+{% block title %}Provider Edit Dish{% endblock %}
 {% block content %}
-<h1>Edit Menu Information</h1>
+<h1>Edit Dish Information</h1>
 
 <h3>Edit dish</h3>
-<form id="dishEditForm" method="POST" action="{{url_for('providers_bp.update_dish',id=id)}}">
+<form id="dishEditForm" method="POST" action="{{url_for('providers_bp.update_dish',id=id)}}"
+    enctype="multipart/form-data">
     {% include "add_edit_dish_partial.html" %}
 
     <button id="submit">Save</button>
@@ -20,4 +21,5 @@
 {% block scripts%}
 <script src="{{url_for('providers_bp.static',filename='nutrition.js')}}"></script>
 <script src="{{url_for('providers_bp.static',filename='validation.js')}}"></script>
-<script src="{{url_for('providers_bp.static',filename='providers.js')}}"></script> {% endblock%}
+<script src="{{url_for('providers_bp.static',filename='providers.js')}}"></script>
+{% endblock%}

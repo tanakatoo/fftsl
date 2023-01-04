@@ -47,6 +47,10 @@
         {% endfor %}
     </fieldset>
 </section>
+<p>Previously submitted image of dish:
+    {{d.dish_image}}
+    <img src="{{ d.dish_image}}" alt="Image of dish">
+</p>
 <p>
     Active: {{d.active}}
 </p>

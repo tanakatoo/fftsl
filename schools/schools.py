@@ -116,31 +116,7 @@ def save_info():
     data=get_info()
     if data[0]:
         resp,s,form_restrict,pr,pd,all_provinces, all_cities, all_days,form,form_days,prov_dates=data
-        # s=School.get_school(g.user.id)
         
-        # all_provinces=set_prov_choices()
-        # all_cities=set_city_choices()
-        # all_days=Recurring_Day.get_all_days()
-        # all_restrict=Restriction.get_all_restrict()
-        
-        # if all_provinces[0] and all_cities[0] and s[0] and all_days[0] and all_restrict[0]:
-        # # see if it has to register a new city
-        #     s=s[1]
-        #     all_days=all_days[1]
-        #     all_restrict=all_restrict[1]
-            
-        #     form_restrict=RestrictionForm()
-        #     restrictions=[(r.id,r.name) for r in all_restrict]
-        #     form_restrict.restrictions.choices=restrictions
-        
-        #     form=SchoolInfoForm()
-        #     form.province_id.choices=all_provinces
-        #     form.city_id.choices=all_cities
-            
-        #     form_days=DaysForm()
-        #     days=[(d.id,d.day) for d in all_days]
-        #     form_days.days.choices=days
-            
         c=register_new_city(city_id=form.city_id.data,city_name=request.form.get('newCity'))
         if c[0]:
             city_id=c[1]

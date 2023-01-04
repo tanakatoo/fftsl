@@ -64,7 +64,7 @@ class CategoryForm(FlaskForm):
 class DishInfoForm(FlaskForm):
     name=StringField("Name of dish", validators=[InputRequired()])
     recipe=TextAreaField("Recipe for nutrition calculation")
-    num_servings=IntegerField("How many servings is this recipe?",validators=[NumberRange(min=0),Optional(strip_whitespace=True)])
+    num_servings=IntegerField("How many servings is this recipe?",default=1,validators=[NumberRange(min=0),Optional(strip_whitespace=True)])
     ingred_disp=TextAreaField("Recipe to display")
     price=DecimalField("Price per serving", validators=[NumberRange(min=0),Optional(strip_whitespace=True)])
     sales_pitch=TextAreaField("What is special about your dish? Sell it here!")
@@ -72,6 +72,7 @@ class DishInfoForm(FlaskForm):
     max_meals=IntegerField("Maximum number of servings of this dish you can provide for one organization at one time",validators=[NumberRange(min=0), Optional(strip_whitespace=True)])
     related_to_dish=SelectField("Related to dish")
     active=BooleanField("Active")
+    dish_image=StringField("Image of Dish", id="dishPic")
     
   
 class SchoolInfoForm(FlaskForm):
