@@ -1,5 +1,5 @@
 // all forms have the submit button, and we need validation for all the forms
-document.querySelector("#submit").addEventListener("click", validation)
+document.querySelector("#save").addEventListener("click", validation)
 
 function validation(e) {
     // remove all errors

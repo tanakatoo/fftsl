@@ -10,7 +10,7 @@
     enctype="multipart/form-data">
     {% include "add_edit_dish_partial.html" %}
 
-    <button id="submit">Save</button>
+    <input type="submit" id='save' name="save" value="Save" />
 </form>
 
 <form action="{{url_for('providers_bp.delete_dish', id=id)}}" method="POST">

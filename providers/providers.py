@@ -495,6 +495,18 @@ def related_dish_dropdown(m,form_d,d):
 def update_dish(id):
 
     d=Dish.get_dish(id)
+    if(request.form.get('removeImage')):
+        if d[0] and not d[1] is None:
+            if d[1].dish_image and not d[1].dish_image is None:
+                res_image=remove_image(file_name_old=d[1].dish_image,folder='dishes')
+                if res_image[0]:
+                    res_dish_image_data=d[1].update_as_is(property='dish_image',data=None)
+                    if not res_dish_image_data[0]:
+                        flash_error(f'Removed image but had trouble removing image name from profile: {res_dish_image_data[1]}')
+                else:
+                    flash_error(f'Trouble deleting image: {res_image[1]}')
+    
+    
     data=get_empty_dish_info()
     
     if d[0] and not d[1] is None and data[0]:
@@ -565,7 +577,6 @@ def update_dish(id):
     else:
         return redirect(url_for('providers_bp.view_dish',id=id)) 
     
-# for editing - new
 @providers_bp.route('/dishes/<int:id>/delete', methods=['POST'])
 @check_is_provider
 @check_login

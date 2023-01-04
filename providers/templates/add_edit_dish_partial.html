@@ -69,6 +69,8 @@
 {%if form_d.dish_image.data %}
 <p>
     Previously submitted image: <img id="submittedFile" src="{{ form_d.dish_image.data }}" alt="Image of Dish">
+    <br>
+    <input type="submit" id="removeImage" name="removeImage" value="Delete image" />
 </p>
 {%endif%}
 <p>
