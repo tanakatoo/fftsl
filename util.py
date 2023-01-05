@@ -58,7 +58,7 @@ def remove_image(file_name_old, folder):
             os.remove(path_old)
             return (True,'removed')
         else:
-            return (False, 'File name is empty or None')
+            return (True, 'File name is empty or None')
     except Exception as e:
         return (False,e)
                 

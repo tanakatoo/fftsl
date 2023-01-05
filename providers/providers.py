@@ -173,6 +173,18 @@ def save_info():
         return redirect(url_for('providers_bp.edit_info'))
     
     resp,p,c,checked_cuisines,pc,pd,all_provinces, all_cities, all_days,form,form_days,form_c,prov_dates=data
+    
+     # if request.form has removeImage, it means the user only clicked to delete image but we need to also save the data
+    if(request.form.get('removeImage')):
+        if p.inspection_report and not p.inspection_report is None:
+            res_image=remove_image(file_name_old=p.inspection_report,folder='inspection')
+            if res_image[0]:
+                res_image_data=p.update_one(property='inspection_report',data=None)
+                if not res_image_data[0]:
+                    flash_error(f'Removed image but had trouble removing image name from profile: {res_image_data[1]}')
+            else:
+                flash_error(f'Trouble deleting image: {res_image[1]}')
+    
     city=register_new_city(city_id=form.city_id.data,city_name=request.form.get('newCity'))
     if city[0]:
         city_id=city[1]
@@ -224,9 +236,14 @@ def save_info():
         
         }
         
-         # save pic of dish if uploaded
+         # save pic of inspection report if uploaded
         file=save_image(form_file='inspectionFile', remove=True, folder='inspection', file_name=f'{str(g.user.id)}',file_name_old=p.inspection_report)
-                
+        
+        if file[0] and not file[1] == 'not submitted':
+            p.inspection_report=file[1]
+        elif not file[0]:
+            flash_error(f'Trouble saving file: {file[1]}')
+                 
 
         # save provider info
         res=Provider.set_provider(fp=p_form, id=g.user.id,p=p)
@@ -368,7 +385,7 @@ def add_dish():
                 if file[0]:
                     #if file was saved successfully, update the dish 
                     d.dish_image=file[1]
-                    res_d=d.update_as_is(property='dish_image', data=file[1])
+                    res_d=d.update_one(property='dish_image', data=file[1])
                     
                 else:
                     flash_error (f'''Trouble saving file: {file[1]}''')
@@ -500,7 +517,7 @@ def update_dish(id):
             if d[1].dish_image and not d[1].dish_image is None:
                 res_image=remove_image(file_name_old=d[1].dish_image,folder='dishes')
                 if res_image[0]:
-                    res_dish_image_data=d[1].update_as_is(property='dish_image',data=None)
+                    res_dish_image_data=d[1].update_one(property='dish_image',data=None)
                     if not res_dish_image_data[0]:
                         flash_error(f'Removed image but had trouble removing image name from profile: {res_dish_image_data[1]}')
                 else:
@@ -548,7 +565,7 @@ def update_dish(id):
             file=save_image(form_file='dishImage', remove=True, folder='dishes', file_name=f'{str(g.user.id)}-{d.id}', file_name_old=d.dish_image)
             if file[0] and not file[1]=='not submitted':
                 d.dish_image=file[1]
-                res_d=d.update_as_is(property='dish_image', data=file[1])
+                res_d=d.update_one(property='dish_image', data=file[1])
                 if not res_d[0]:
                     flash_error (f'''Trouble saving image name: {res_d[1]}''')    
             

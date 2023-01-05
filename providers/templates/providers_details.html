@@ -91,9 +91,11 @@
         {%endfor%}
     </tbody>
 </table>
+{% if p.inspection_report %}
 <p>Submitted inspection report
     <img src="{{ p.inspection_report }}" alt="Inspection report">
 </p>
+{% endif %}
 
 
 <button><a href="{{url_for('providers_bp.edit_info')}}">Edit</a></button>

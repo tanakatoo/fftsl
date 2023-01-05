@@ -143,6 +143,8 @@
     {%if form.inspection_report.data %}
     <p>
         Submitted file: <img id="submittedFile" src="{{ form.inspection_report.data }}" alt="Inspection report">
+        <br>
+        <input type="submit" id='removeImage' name="removeImage" value="Delete Upload" />
     </p>
     {%endif%}
     <ul>
@@ -152,7 +154,7 @@
         {% endfor%}
     </ul>
 
-    <button id="submit">Save</button>
+    <input type="submit" id='save' name="save" value="Save" />
     <button id="reviewBtn">Submit for review</button>
 
     <p><button id="deleteAcct" class="modalTrigger">Delete Account - doesn't work</button></p>

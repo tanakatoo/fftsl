@@ -651,6 +651,15 @@ class Provider(db.Model):
         ps=Provider.query.filter_by(submit_inspection=True,reviewed=False).all()
         return ps
    
+   
+    def update_one(self, property,data):
+        setattr(self,property,data)
+
+        db.session.add(self)
+        db.session.commit()
+        db.session.refresh(self)
+        return (True,self)
+    
     @classmethod
     def set_provider(cls, fp, id,p=None):
             
@@ -815,7 +824,7 @@ class Dish(db.Model):
         except Exception as e:
             return (False,e)
    
-    def update_as_is(self, property,data):
+    def update_one(self, property,data):
         setattr(self,property,data)
 
         db.session.add(self)
