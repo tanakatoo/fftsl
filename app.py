@@ -21,7 +21,6 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}},  supports_credentials=True)
 app.debug=True
 app.config.from_object(DevConfig)
-os.environ.get('SECRET_KEY','shh')
 debug=DebugToolbarExtension(app)
 app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 
