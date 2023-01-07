@@ -8,7 +8,7 @@
 <form action="{{url_for('schools_bp.save_info')}}" id="schoolEditForm" method="POST" autocomplete="off"
     autocomplete="chrome-off">
     {{ form.hidden_tag() }}
-
+    <p>School code: {{s.code}}</p>
     <p>
         {{form.name.label}}: {{form.name}} <span class="error" id="nameError"></span>
     </p>

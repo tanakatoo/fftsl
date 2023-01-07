@@ -1,18 +1,18 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session,g
 from functools import wraps
-from models import User, School
+from models import User, School, Provider, Parent
 from forms import PasswordResetForm, PasswordSetForm, LoginForm, UserRegisterForm
 from config import CURR_USER_KEY
 from general.general import flash_error,flash_success
+from emails.emailing import signup_email
 
 # have to import the model for this here
 
 auth_bp = Blueprint('auth_bp', __name__,
     template_folder='templates', static_folder='static',static_url_path='/auth/static')
-    # static_folder='static', static_url_path='assets')
 
 
-# all go to the root of this, which is defined in app.py ('/products')
+
 @auth_bp.route('/reset_password', methods=['POST', 'GET'])
 def reset_password():
     form=PasswordResetForm()
@@ -55,9 +55,8 @@ def set_password():
                 return redirect ('/browsing')
         else:
             # setting password returned an error
-            session['msg']=f"""<p>Sorry, there was an error setting your password. Please contact help@fftsl.ca with the following message:<p>
-                    <p>{res[1]}"""
-            return redirect(url_for("general_bp.system_message")) 
+            flash_error(f'Trouble setting your password: {res[1]}')
+            return redirect(url_for("general_bp.home")) 
     else:
         # make sure they are not accessing the page by typing in the url
         if(request.args.get('key')):
@@ -82,27 +81,54 @@ def set_password():
 @auth_bp.route('/signup', methods=["GET","POST"])
 def signup():
     form=UserRegisterForm()
-    if form.validate_on_submit():
-
-        res=User.register(user_type=form.user_type.data,email=form.email.data)
+    form_pass=PasswordSetForm()
+    if form.validate_on_submit() and form_pass.validate_on_submit():
+        res=User.register(user_type=form.user_type.data,email=form.email.data, pwd=form_pass.password.data)
+    
         if res[0]:
             u=res[1]
-            if request.form['user_type'] == 'school':
-                res=School.register(name=request.form['school_name'], user_id=u.id)
+            if form.user_type.data == 'school':
+                res=School.register(name=request.form['establishment_name'], user_id=u.id)
                 
                 if not res[0]:
                     flash_error(f'Trouble registering school name: {res[1]}')
                     return redirect(url_for('general_bp.home'))
-
-            return redirect(url_for('email_bp.signup_email',user_type=request.form['user_type'],email=request.form['email'], school_name=request.form.get('school_name')))
+            elif form.user_type.data=='provider':
+                res=Provider.register(user_id=u.id,name=request.form['establishment_name'])
+            elif form.user_type.data=='parent':
+                s=School.search_code(form.establishment_name.data)
+                if s[0]:
+                    s=s[1]
+                    if not s is None:
+                        # write school id in parent table
+                        p=Parent.insert_parent(user_id=u.id,school_id=s.user_id)
+                        if not p[0]:
+                            flash_error(f'Trouble connecting you to the school: {p[1]}')
+                            return url_for('signup')
+                    else:
+                        flash_error(f'Trouble finding school associated with your code. Please double check and try again.')
+                        return url_for('signup')
+            # call function to send email
+            signup_email(u=u, establishment_name=form.establishment_name.data)
+            # login and redirect
+            do_login(u.id)
+            if u.user_type=='school':
+                return redirect(url_for('schools_bp.home'))
+            elif u.user_type=='provider':
+                return redirect(url_for('providers_bp.home'))
+            elif u.user_type=='parent':
+                return redirect(url_for('parents_bp.home'))
+            elif u.user_type=='admin':
+                return redirect(url_for('admin_bp.home'))
+            # return redirect(url_for('email_bp.signup_email',u=u, establishment_name=form.establishment_name.data))
             
         else:
             # registration error
             flash_error(f"Trouble registering: {res[1]}")
-            return redirect('/')
+            return url_for('signup')
         
     else:
-        return render_template('signup.html', form=form)
+        return render_template('signup.html', form=form, form_pass=form_pass)
     
 
 @auth_bp.route('/login', methods=['POST','GET'])
@@ -118,6 +144,8 @@ def login():
                 return redirect(url_for('schools_bp.home'))
             elif u.user_type=='provider':
                 return redirect(url_for('providers_bp.home'))
+            elif u.user_type=='parent':
+                return redirect(url_for('parents_bp.home'))
             elif u.user_type=='admin':
                 return redirect(url_for('admin_bp.home'))
         else:

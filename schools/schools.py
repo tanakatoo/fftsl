@@ -104,7 +104,7 @@ def edit_info():
     if data[0]:
         resp,s,form_restrict,pr,pd,all_provinces, all_cities, all_days,form,form_days,prov_dates=data
         form_restrict.restrictions.data=[r.restriction_id for r in pr]
-        return render_template("schools_edit_info.html",form=form,email=g.user.email,form_restrict=form_restrict,form_days=form_days,pd=pd, prov_dates=prov_dates)
+        return render_template("schools_edit_info.html",s=s,form=form,email=g.user.email,form_restrict=form_restrict,form_days=form_days,pd=pd, prov_dates=prov_dates)
     else:
        
         return redirect(url_for('schools_bp.home'))

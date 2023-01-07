@@ -5,7 +5,6 @@ import jwt
 from jwt.exceptions import ExpiredSignatureError
 import os
 from datetime import datetime, timedelta
-from flask import flash
 import random
 from decimal import Decimal
 from datetime import date, datetime
@@ -37,23 +36,20 @@ class User(db.Model):
     provider=db.relationship("Provider", back_populates="user")
     
     @classmethod
-    def register(cls,email,user_type,pwd=""):
+    def register(cls,email,user_type,pwd):
         # this is to register schools or providers only
         # no need for user to set password yet until they are authorized manually
         # we set a fake random generated password first
-        try:
-            if user_type == "provider" or user_type=="school":
-                random_password=""
-                for num in range(10):
-                    random_password += str(random.randint(0,9))
-                hashed=bcrypt.generate_password_hash(random_password)
-                pwd=hashed.decode("utf8")
+        # try:
+            
+            hashed=bcrypt.generate_password_hash(pwd)
+            pwd=hashed.decode("utf8")
             
             u=cls(email=email,password=pwd, user_type=user_type)
             db.session.add(u)
             db.session.commit()
             return (True,u)
-        except Exception as e:
+        # except Exception as e:
             db.session.rollback()
             return (False,e)
     
@@ -98,9 +94,29 @@ class User(db.Model):
             res=jwt.decode(key,key=os.environ.get("SECRET_KEY"),algorithms=[al['alg'], ])
             return (True,res)
         except ExpiredSignatureError as e:
-            
             return (False,e)
-        
+        except Exception as e:
+            return (False, e)
+
+class Parent(db.Model):
+    __tablename__='parents'
+    def __repr__(self):
+        return f'<user_id={self.user_id}, school_id={self.school_id}'
+    
+    user_id=db.Column(db.Integer,
+                      db.ForeignKey('users.id'),
+                      primary_key=True)
+    school_id=db.Column(db.Integer,
+                        db.ForeignKey('schools.user_id'))
+    
+    school=db.relationship('School', back_populates="parents")
+    
+    @classmethod
+    def insert_parent(cls,user_id,school_id):
+        p=cls(user_id=user_id,school_id=school_id)
+        db.session.add(p)
+        db.session.commit()
+        return (True,p)
 
 class City(db.Model):
     __tablename__='cities'
@@ -173,6 +189,27 @@ class Province(db.Model):
         except Exception as e:
             return (False, e)
 
+# class School_Board(db.Model):
+#     __tablename__='school_boards'
+#     def __repr__(self):
+#         return f"""<id={self.id}, name={self.name}>"""
+    
+#     id= db.Column(db.Integer,
+#                   primary_key=True,
+#                   autoincrement=True)
+    
+#     schools=db.relationship("School", back_populates="school_board")
+
+# class School_List(db.Model):
+#     __tablename__='school_list'
+#     def __repr__(self):
+#         return f"""<id={self.id}, name={self.name}>"""
+    
+#     id= db.Column(db.Integer,
+#                   primary_key=True,
+#                   autoincrement=True)
+    
+#     schools=db.relationship("School", back_populates="school_board")
 
 class School(db.Model):
     __tablename__='schools'
@@ -186,6 +223,7 @@ class School(db.Model):
             contact_name={self.contact_name},
             phone={self.phone},
             principal_name={self.principal_name},
+            code={self.code},
             active={self.active}>>"""
     
     user_id= db.Column(db.Integer,
@@ -201,6 +239,7 @@ class School(db.Model):
     principal_name=db.Column(db.String(100))
     contact_name=db.Column(db.String(100))
     phone=db.Column(db.String(50))
+    code=db.Column(db.String(4), unique=True)
     active=db.Column(db.Boolean, nullable=False,default=True)
     
     user=db.relationship('User',back_populates="school", cascade='save-update, merge, delete')
@@ -212,11 +251,23 @@ class School(db.Model):
                                    secondary="recurring_availabilities_schools",back_populates="schools", cascade='save-update, merge, delete')
     restrictions=db.relationship("Restriction", secondaryjoin="Restriction_School.restriction_id == Restriction.id",
                                  secondary="restrictions_schools",back_populates="schools", cascade='save-update, merge, delete')
+    parents=db.relationship('Parent',back_populates="school", cascade="save-update, merge, delete")
+    # school_board=db.relationship('School_Board',back_populates="schools")
     
     @classmethod
     def register(cls,name, user_id):
         s=cls(name=name, user_id=user_id)
         try:
+            school_code=""
+            same_code="abcd"
+            while not same_code is None:
+                for num in range(2):
+                    school_code += str(random.randint(0,9))
+                    school_code += chr(random.randint(ord('A'), ord('Z'))) 
+                # check that no other schools have this code already:
+                same_code=cls.query.filter_by(code=school_code).first()
+            
+            s.code=school_code
             db.session.add(s)
             db.session.commit()
             return (True,s)
@@ -232,7 +283,15 @@ class School(db.Model):
         except Exception as e:
             return (False,e)
 
-   
+    @classmethod
+    def search_code(cls,code):
+        try:
+            s=School.query.filter_by(code=code).first()
+            return (True, s)
+        except Exception as e:
+            return (False,e)
+    
+    
     @classmethod
     def set_school(cls, fs, id, s):
         
@@ -661,7 +720,7 @@ class Provider(db.Model):
         return (True,self)
     
     @classmethod
-    def set_provider(cls, fp, id,p=None):
+    def update_provider(cls, fp, id,p=None):
             
         try:
        
@@ -685,35 +744,28 @@ class Provider(db.Model):
                 p.submit_inspection=fp['submit_inspection']
                 p.submit_inspection_date=fp['submit_inspection_date']
 
-            else:
-  
-                # they are creating a record for the first time, make a new provider
-                p=Provider(user_id=id,
-                           name=fp['name'],
-                           website=fp['website'],
-                        address=fp['address'],
-                        city_id=fp['city_id'],
-                        province_id=fp['province_id'],
-                        contact_name=fp['contact_name'],
-                        phone=fp['phone'],
-                        sales_pitch=fp['sales_pitch'],
-                        active=fp['active'],
-                        geocode_lat=fp['geocode_lat'],
-                        geocode_long=fp['geocode_long'],
-                        max_meals_per_day=fp['max_meals_per_day'],
-                        min_meals=fp['min_meals'],
-                        serve_num_org_per_day=fp['serve_num_org_per_day'],
-                        submit_inspection=fp['submit_inspection'],
-                        submit_inspection_date=fp['submit_inspection_date']         
-                )
-            
-            
             # also need to update email in user table
             # get the user first
             u=User.query.get(id)
             u.email=fp['email']
 
             db.session.add(u)
+            db.session.add(p)
+            db.session.commit()
+            #need to refresh p as p has changed
+            db.session.refresh(p)
+
+            return (True, p)
+        except Exception as e:
+            db.session.rollback()
+            return (False,e)
+    @classmethod
+    def register(cls,user_id,name):
+        try:
+            # they are creating a record for the first time, make a new provider
+            p=Provider(user_id=user_id,
+                        name=name      
+            )        
             db.session.add(p)
             db.session.commit()
             #need to refresh p as p has changed
@@ -749,8 +801,62 @@ class Provider(db.Model):
         except Exception as e:
             db.session.rollback()
             return (False,e)
-            
+
+    @classmethod
+    def search(cls,criteria):
+        """Search for providers: name, or cuisine
+        Only active providers are searched"""
+        print('************criteria is')
+        print(criteria)
+        # r=cls.query.filter((cls.name.like(f'%{criteria}%')))
         
+        
+        # this one works
+        r=db.session.query(Provider).filter(
+                ((Provider.active==True),
+                (Provider.display==True)) &
+                ((Cuisine.name.ilike(f'%{criteria}%')) |
+                (Provider.name.ilike(f'%{criteria}%')))
+        ).all()
+        print(r)                                              
+            
+                                                    #   order_by(Cuisine_Provider.cuisine_id)).all()
+        return r
+        
+    def serialize(self):
+        # get province and city name
+        if self.province_id:
+            province=Province.get_name(self.province_id)
+            if province[0]:
+                province=province[1]
+            else:
+                province=None
+        else:
+            province=None
+        if self.city_id:
+            city=City.get_name(self.city_id)
+            if city[0]:
+                city=city[1]
+            else:
+                city=None
+        else:
+            city=None
+        return {
+            'name':self.name,
+            'website':self.website,
+            'address':self.address,
+            'city_id':city,
+            'province_id':province,
+            'contact_name':self.contact_name,
+            'phone':self.phone,
+            'sales_pitch':self.sales_pitch,
+            'geocode_lat':self.geocode_lat,
+            'geocode_long':self.geocode_long,
+            'max_meals_per_day':self.max_meals_per_day,
+            'min_meals':self.min_meals,
+            'serve_num_org_per_day':self.serve_num_org_per_day
+        }
+   
    
 class Dish(db.Model):
     __tablename__="dishes"
@@ -928,7 +1034,12 @@ class Dish(db.Model):
         except Exception as e:
             db.session.rollback()
             return (False,e)
-        
+    
+    @classmethod
+    def search(cls,criteria):
+        """Search for dishes: name, ingredients(ingred_disp), type of food (not yet implemented)
+        only active ones are searched"""
+    
 class Category(db.Model):
     __tablename__="categories"
     
@@ -993,6 +1104,20 @@ class Cuisine(db.Model):
         except Exception as e:
             return (False,e)
     
+    @classmethod
+    def search(cls, criteria):
+        cs=db.session.query( Cuisine.id).filter(
+                ((Cuisine_Provider.cuisine_id == Cuisine.id) &
+                (Cuisine_Provider.provider_id == Provider.user_id) & 
+                (Cuisine.name.ilike(f'%{criteria}%')))
+        ).all()
+        return cs
+    
+    def serialize(self):
+        return {
+            'name': self.name
+        }
+        
     """In the future if setting cuisines is a feature"""
     # @classmethod
     # def set_cuisine(cls, name):

@@ -33,12 +33,25 @@
         {% endfor %}
     </div>
     </p>
-    <div id="dispSchoolName" class="hide">
+    <div id="dispSchoolName">
         <p>
-            {{form.school_name.label}}
-            {{form.school_name}} <span class="error" id="schoolNameError">{{form.school_name.errors.error}}</span>
+            {{form.establishment_name.label}}
+            {{form.establishment_name}} <span class="error"
+                id="establishmentNameError">{{form.establishment_name.errors.error}}</span>
         </p>
 
+    </div>
+    <div>
+        {% for field in form_pass
+        if field.widget.input_type !='hidden' %}
+        <p>
+            {{field.label}}
+            {{field(class_="form-control")}}
+            {% for error in field.errors %}
+            {{error}}
+            {% endfor%}
+        </p>
+        {% endfor %}
     </div>
 
     <button id="submit">Signup</button>

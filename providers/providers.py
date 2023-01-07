@@ -125,9 +125,12 @@ def info_details():
         if p.inspection_report and not p.inspection_report is None:
             p.inspection_report=path_to_file(saved_file=p.inspection_report, folder='inspection')
         
-        if province[0] and city[0]:
+        if province[0] and city[0] and province[1] and city[1]:
             province=province[1]
             city=city[1]
+        elif province[1] and city[1]:
+            province=""
+            city=""
         else:
             if not province[0]:
                 flash_error(f'Trouble getting province: {province[1]}')
@@ -246,7 +249,7 @@ def save_info():
                  
 
         # save provider info
-        res=Provider.set_provider(fp=p_form, id=g.user.id,p=p)
+        res=Provider.update_provider(fp=p_form, id=g.user.id,p=p)
         # save cuisines
         resc=Cuisine_Provider.set_cuisines(fc=form_c.cuisines.data,id=g.user.id)
         

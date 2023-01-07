@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, session, flash
-from models import City
+from flask import Blueprint, render_template, request, session, flash, jsonify
+from models import City, Provider, Dish, Cuisine
 
 # have to import the model for this here
 
@@ -21,6 +21,18 @@ def system_message():
     # remove session
     
     return render_template("message.html",msg=msg)
+
+@general_bp.route('/api/search')
+def search():
+
+    s=request.args.get('s')
+    ps=Provider.search(criteria=s)
+
+    # cs=Cuisine.search(criteria=s)
+    p_ser=[p.serialize() for p in ps]
+    # c_ser=[c.serialize() for c in cs]
+    return jsonify(providers=p_ser)
+    
 
 def flash_error(msg):
     return flash(msg, 'error')

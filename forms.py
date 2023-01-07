@@ -11,8 +11,8 @@ class PasswordSetForm(FlaskForm):
     
 class UserRegisterForm(FlaskForm):
     email=EmailField("Email", validators=[InputRequired(), Email()],id="email")
-    user_type=RadioField("You are a: ",choices=[('provider','Provider'),('school','School'),('parent','Parent')], default='provider')
-    school_name=StringField("Name of School ", id="schoolName")
+    user_type=RadioField("You are a: ",choices=[('parent','Parent'),('school','School'),('provider','Provider')], default='parent')
+    establishment_name=StringField(id="establishment_name")
     
 class LoginForm(FlaskForm):
     email=EmailField("Email", validators=[InputRequired(), Email()])

@@ -1,29 +1,32 @@
 // only run for specific forms
 if (document.querySelector("#signupForm")) {
+    // user_type-2 = provider
     // user_type-1 = school
-    // user_type-0 =provider
+    // user_type-0 =parent
 
-    // display school name input box only if school is selected
+    // change label for input box
     document.querySelector("#selection").addEventListener("click", (e) => {
 
         if (e.target.id == "user_type-1") {
             if (document.querySelector("#user_type-1").checked) {
-                document.querySelector("#dispSchoolName").classList.remove("hide")
+                document.querySelector('label[for="establishment_name"]').textContent = "Name of school"
             }
         } else if (e.target.id == "user_type-0") {
-            document.querySelector("#dispSchoolName").classList.add("hide")
+            document.querySelector('label[for="establishment_name"]').textContent = "School code:"
+        } else if (e.target.id == "user_type-2") {
+            document.querySelector('label[for="establishment_name"]').textContent = "Name of restaurant/cater:"
         }
     })
 
     // validation
     document.querySelector("#submit").addEventListener("click", (e) => {
 
-        if (document.querySelector("#user_type-1").checked) {
-            if (document.querySelector("#schoolName").value.trim() == "") {
-                document.querySelector("#schoolNameError").innerText = "School name cannot be blank."
-                e.preventDefault()
-            }
+
+        if (document.querySelector("#establishment_name").value.trim() == "") {
+            document.querySelector("#establishmentNameError").innerText = "Name/code cannot be blank."
+            e.preventDefault()
         }
+
         if (document.querySelector("#email").value.trim() == "") {
             document.querySelector("#emailError").innerText = "Email cannot be blank."
             e.preventDefault()

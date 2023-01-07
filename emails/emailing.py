@@ -11,32 +11,33 @@ from sendgrid.helpers.mail import Mail
 
 email_bp = Blueprint('email_bp', __name__,
     template_folder='templates', static_folder='static')
-    # static_folder='static', static_url_path='assets')
 
 
-@email_bp.before_request
+# @email_bp.before_request
 def set_domain():
     g.domain="http://localhost:5000"
 
-@email_bp.route('/signup_email')
-def signup_email():
-    user_type=request.args['user_type']
-    email=request.args['email']
-    school_name=request.args.get("school_name")
+# @email_bp.route('/signup_email')
+def signup_email(u,establishment_name):
+    set_domain()
     
     beginning="<h3>Welcome, we are glad you are joining us!</h3>"
-    if user_type=="provider":
+    if u.user_type=="provider":
         beginning+="""Thank you for willing to give students in Ontario the opporunity to experience your culinary arts!<br><br>
-            To finish signing up for an account, we need to verify your identity.
-            Please reply to this email with a picture of your public health inspection report 
-            that was performed within 10 months to prove that you are a legitimate provider in Ontario. 
-                Once we get your submission and confirm, you will receive an email to set your password to login to our website."""
-    elif user_type=="school":
-        school=request.args['school_name']
+            To make your account active, we need to verify your identity. Once you have completed your profile and uploaded your
+            inspection report, press the "Submit for Confirmation" button to submit your profile. 
+            Once we have confirmed your business, you will receive an email that your account is active and you are
+            ready to make your menu on our website."""
+    elif u.user_type=="school":
         beginning+=f"""Thank you for giving your students the opportunity to experience a wealth of culinary experience.<br><br>
-            To finish signing up for an account, we need to verify your identity. We will be in touch with the principal of
-            {school_name} to confirm participation. Once we get confirmation, you will receive an email to set your password
-            to login to our website and start your journey to healthier, happier students!"""
+            To finish make your account active, we need to verify your identity. We will be in touch with the principal of
+            {establishment_name} to confirm participation. Once we get confirmation, you will receive an email that your account is 
+            active and you can start searching our database of participating restaurants and caterers around your area 
+            that meet your needs and availability."""
+    elif u.user_type=='parent':
+        beginning+=f"""Thank you for giving your child the opportunity to experience a wealth of culinary experience.<br><br>
+            Some marketing here how they can search for featured menus and search for restaurants and favourite them to 
+            influence the choice their school makes."""
     
     link=False
     button=False
@@ -44,7 +45,7 @@ def signup_email():
     footer=False
     message = Mail(
         from_email='Food For Thought School Lunches <signup@fftsl.ca>',
-        to_emails=email,
+        to_emails=u.email,
         subject='Welcome to Food for Thought School Lunches program',
         html_content=content_builder(beginning,link,button,end,footer))
         
@@ -52,7 +53,9 @@ def signup_email():
         sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         response = sg.send(message)
         
-        flash("Your email has been registered. Please check your email for further instructions. In the meantime, feel free to browse around!", "success_bkg")
+        flash("Your email has been successfully registered.", "success_bkg")
+        if u.user_type=='provider':
+            return redirect('/')
         return redirect ('/browsing')
     except HTTPError as e:
         # pylint: disable=no-member
@@ -61,6 +64,7 @@ def signup_email():
 
 @email_bp.route('/set_password_email')
 def set_password_email():
+    set_domain()
     key=request.args['key']
     email=request.args['email']
     # only admin users can access this page

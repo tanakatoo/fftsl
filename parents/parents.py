@@ -1,12 +1,14 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, url_for, redirect
+from models import Provider, Dish, Parent
 # have to import the model for this here
 
 parents_bp = Blueprint('parents_bp', __name__,
     template_folder='templates', static_folder='static')
-    # static_folder='static', static_url_path='assets')
 
-# all go to the root of this, which is defined in app.py ('/products')
 @parents_bp.route('/')
 def home():
-    # products = Product.query.all()
+    # criteria=request.form.get('search')
+    # if criteria:
+    #     return redirect(url_for("general_bp.search", criteria=criteria))
     return render_template('parents_home.html')
+
